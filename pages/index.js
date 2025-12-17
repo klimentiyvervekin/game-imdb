@@ -1,30 +1,20 @@
 import useSWR from "swr";
-import GameList from "../components/GameList";
-import PostList from "../components/PostList";
+import FeedList from "../components/FeedList";
+
+const fetcher = (url) => fetch(url).then((r) => r.json());
 
 export default function HomePage() {
-  const { data: games, error: gamesError } = useSWR("/api/games");
-  const { data: posts, error: postsError } = useSWR("/api/posts");
+  const { data: games, error: gamesError } = useSWR("/api/games", fetcher);
+  const { data: posts, error: postsError } = useSWR("/api/posts", fetcher);
 
-  if (gamesError || postsError) {
-    return <p>Failed to load data</p>;
-  }
+  if (gamesError || postsError) return <p>Failed to load data</p>;
+  if (!games || !posts) return <p>Loading...</p>;
 
-  if (!games || !posts) {
-    return <p>Loading...</p>;
-  }
+  if (games.length === 0 && posts.length === 0) return <p>No games yet / No posts yet</p>;
 
   return (
-    <main>
-      <section>
-        <h2>Games</h2>
-        {games.length === 0 ? <p>No games yet</p> : <GameList games={games} />}
-      </section>
-
-      <section>
-        <h2>Latest posts</h2>
-        {posts.length === 0 ? <p>No posts yet</p> : <PostList posts={posts} />}
-      </section>
+    <main style={{ padding: 16 }}>
+      <FeedList games={games} posts={posts} />
     </main>
   );
 }
