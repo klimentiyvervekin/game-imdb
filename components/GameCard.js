@@ -10,9 +10,9 @@ export default function GameCard({ game }) {
           <Image
             src={game.coverUrl}
             alt={game.title}
-            width={120}
-            height={90}
-          />
+            width={240}
+            height={180}
+          />  // && means "show <Image> if game.coverUrl exist"
         )}
         <Title>{game.title}</Title>
       </Card>
