@@ -1,6 +1,9 @@
 import { dbConnect } from "../../../db/connect";
 import Game from "../../../db/models/Game";
 
+// this file imports games from the RAWG API
+// it creates new games or updates existing ones using externalId
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
@@ -37,14 +40,14 @@ export default async function handler(req, res) {
 
     // if we have game - update game, if not - create game
     for (const g of results) {
-      const externalId = g.id;
+      const rawgId = g.id;
       const title = g.name;
       const slug = g.slug;
       const coverUrl = g.background_image || null;
 
       const doc = await Game.findOneAndUpdate(
-        { externalId }, // find a game with externalId
-        { externalId, title, slug, coverUrl }, // if game found then update
+        { externalId: rawgId }, // find a game with externalId
+        { externalId: rawgId, title, slug, coverUrl }, // if game found then update
         { upsert: true, new: true, setDefaultsOnInsert: true } // if not found create new
       );
 
@@ -61,5 +64,3 @@ export default async function handler(req, res) {
   }
 }
 
-// this file imports games from the RAWG API
-// it creates new games or updates existing ones using externalId
