@@ -6,7 +6,7 @@ const nextConfig = {
   reactStrictMode: true,
 
   images: {
-    domains: ["media.rawg.io"],
+    domains: ["media.rawg.io", "screenshots.rawg.io"],
   },
 
   webpack(config) {
