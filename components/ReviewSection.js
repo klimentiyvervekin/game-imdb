@@ -9,6 +9,19 @@ const fetcher = async (url) => {
   return json;
 };
 
+//---------helper--------//
+function getClientId() {
+  if (typeof window === "undefined") return "server";
+  const key = "clientId";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+//----------------------//
+
 export default function ReviewSection({ gameId }) {
   const {
     data: reviews,
@@ -25,6 +38,8 @@ export default function ReviewSection({ gameId }) {
   const [openUpdateForId, setOpenUpdateForId] = useState(null);
   const [updateText, setUpdateText] = useState("");
   const [updateError, setUpdateError] = useState("");
+
+  const clientId = useMemo(() => getClientId(), []);
 
   // "const stats = useMemo" means "count stats but only if reviews changed" (because of useMemo)
   // "toFixed" do "9,33333" to "9,3"
@@ -56,7 +71,6 @@ export default function ReviewSection({ gameId }) {
     }
 
     await mutate();
-
   }
 
   //-----Update Review-----//
@@ -87,29 +101,48 @@ export default function ReviewSection({ gameId }) {
 
   //-----Delete updated Review-----//
   async function handleDeleteUpdate(reviewId, updateIndex) {
-  const ok = confirm("Delete this update?");
-  if (!ok) return;
+    const ok = confirm("Delete this update?");
+    if (!ok) return;
 
-  try {
-    const res = await fetch(
-      `/api/reviews/${reviewId}/updates/${updateIndex}`,
-      { method: "DELETE" }
-    );
+    try {
+      const res = await fetch(
+        `/api/reviews/${reviewId}/updates/${updateIndex}`,
+        { method: "DELETE" }
+      );
 
-    const json = await res.json();
+      const json = await res.json();
 
-    if (!res.ok) {
-      alert(json?.error || "Failed to delete update");
-      return;
+      if (!res.ok) {
+        alert(json?.error || "Failed to delete update");
+        return;
+      }
+
+      await mutate(); // update ui
+    } catch (err) {
+      alert(err.message || "Failed to delete update");
     }
-
-    await mutate();
-
-  } catch (err) {
-    alert(err.message || "Failed to delete update");
   }
-}
 
+  //------Vote Functions------//
+  async function voteReview(reviewId, type) {
+    await fetch(`/api/reviews/${reviewId}/vote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, voterId: clientId }),
+    });
+    await mutate();
+  }
+
+  async function voteUpdate(reviewId, updateIndex, type) {
+    await fetch(`/api/reviews/${reviewId}/updates/${updateIndex}/vote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, voterId: clientId }),
+    });
+    await mutate();
+  }
+
+  //------Submit Review--------//
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitError("");
@@ -195,6 +228,22 @@ export default function ReviewSection({ gameId }) {
             </Top>
             <p>{r.text}</p>
 
+            {/* VOTE BUTTONS */}
+            <VotesRow>
+              <button
+                type="button"
+                onClick={() => voteReview(r._id, "helpful")}
+              >
+                Helpful {r.helpfulCount || 0}
+              </button>
+              <button
+                type="button"
+                onClick={() => voteReview(r._id, "notHelpful")}
+              >
+                Not helpful {r.notHelpfulCount || 0}
+              </button>
+            </VotesRow>
+
             {/* DELETE */}
             <button type="button" onClick={() => handleDelete(r._id)}>
               Delete
@@ -210,6 +259,23 @@ export default function ReviewSection({ gameId }) {
                     <small>{new Date(u.createdAt).toLocaleDateString()}</small>
                     <p>{u.text}</p>
 
+                    {/* VOTE BUTTONS FOR UPDATE REVIEWS*/}
+                    <VotesRow>
+                      <button
+                        type="button"
+                        onClick={() => voteUpdate(r._id, i, "helpful")}
+                      >
+                        Helpful {u.helpfulCount || 0}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => voteUpdate(r._id, i, "notHelpful")}
+                      >
+                        Not helpful {u.notHelpfulCount || 0}
+                      </button>
+                    </VotesRow>
+
+                    {/* DELETE UPDATE REVIEW BUTTON */}
                     <button
                       type="button"
                       onClick={() => handleDeleteUpdate(r._id, i)}
@@ -218,7 +284,6 @@ export default function ReviewSection({ gameId }) {
                     </button>
                   </UpdateItem>
                 ))}
-
               </Updates>
             )}
 
@@ -228,7 +293,7 @@ export default function ReviewSection({ gameId }) {
               onClick={() => {
                 setUpdateError("");
                 setUpdateText("");
-                setOpenUpdateForId(openUpdateForId === r._id ? null : r._id);
+                setOpenUpdateForId(openUpdateForId === r._id ? null : r._id); // toggle logic for form
               }}
             >
               Add update
@@ -370,3 +435,15 @@ const UpdateForm = styled.form`
   }
 `;
 
+const VotesRow = styled.div`
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+
+  button {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+  }
+`;

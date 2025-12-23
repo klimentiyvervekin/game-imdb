@@ -14,6 +14,7 @@ export default async function handler(req, res) {
     const { id, index } = req.query;
     const updateIndex = Number(index);
 
+    // "isInteger" means "is this number an integer?" (integer = whole number)
     if (!Number.isInteger(updateIndex)) {
       return res.status(400).json({ error: "Invalid update index" });
     }
@@ -30,7 +31,8 @@ export default async function handler(req, res) {
     ) {
       return res.status(404).json({ error: "Update not found" });
     }
-
+    
+    // 1 is index (second review). "splice" delete any index(object)
     review.updates.splice(updateIndex, 1);
     await review.save();
 

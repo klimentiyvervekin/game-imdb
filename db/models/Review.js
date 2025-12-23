@@ -22,10 +22,21 @@ const ReviewSchema = new mongoose.Schema(
       type: String,
       default: "Anonymous",
     },
+
+    helpfulCount: { type: Number, default: 0 },
+    notHelpfulCount: { type: Number, default: 0 },
+    helpfulVoters: [{ type: String }], // clientId until now
+    notHelpfulVoters: [{ type: String }],
+
     updates: [
       {
         text: { type: String, required: true, trim: true },
         createdAt: { type: Date, default: Date.now },
+
+        helpfulCount: { type: Number, default: 0 },
+        notHelpfulCount: { type: Number, default: 0 },
+        helpfulVoters: [{ type: String }], 
+        notHelpfulVoters: [{ type: String }], 
       },
     ],
   },
