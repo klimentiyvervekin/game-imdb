@@ -3,6 +3,7 @@ import useSWR from "swr";
 import Image from "next/image";
 import Link from "next/link";
 import styled from "styled-components";
+import ReviewSection from "../../components/ReviewSection";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -108,6 +109,10 @@ export default function GamePage() {
         </Link>
 
       </Card>
+
+      <Section>
+        <ReviewSection gameId={game._id} />
+      </Section>
 
       <Section>
         <h2>Posts</h2>
