@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
     // POST /api/reviews
     if (req.method === "POST") {
-      const { gameId, rating, text } = req.body;
+      const { gameId, rating, text, authorId, hasSpoilers } = req.body;
 
       // basic validation
       const trimmedText = (text || "").trim();
@@ -29,12 +29,22 @@ export default async function handler(req, res) {
       }
 
       const numericRating = Number(rating);
-      if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 10) {
-        return res.status(400).json({ error: "Rating must be between 1 and 10" });
+      if (
+        !Number.isFinite(numericRating) ||
+        numericRating < 1 ||
+        numericRating > 10
+      ) {
+        return res
+          .status(400)
+          .json({ error: "Rating must be between 1 and 10" });
       }
 
       if (!gameId) {
         return res.status(400).json({ error: "gameId is required" });
+      }
+
+      if (!authorId) {
+        return res.status(400).json({ error: "authorId is required" });
       }
 
       const created = await Review.create({
@@ -42,6 +52,8 @@ export default async function handler(req, res) {
         rating: numericRating,
         text: trimmedText,
         user: "Anonymous", // MVP placeholder
+        authorId,
+        hasSpoilers: Boolean(hasSpoilers),
       });
 
       return res.status(201).json(created);

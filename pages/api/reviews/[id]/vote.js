@@ -1,6 +1,8 @@
 import { dbConnect } from "../../../../db/connect";
 import Review from "../../../../db/models/Review";
 
+// this file is backend logic for votes (add vote, toggle vote, only 1 vote per person and so on)
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -25,10 +27,10 @@ export default async function handler(req, res) {
     review.helpfulCount = review.helpfulCount || 0;
     review.notHelpfulCount = review.notHelpfulCount || 0;
 
-    const hasHelpful = review.helpfulVoters.includes(voterId);
-    const hasNotHelpful = review.notHelpfulVoters.includes(voterId);
+    const hasHelpful = review.helpfulVoters.includes(voterId); // list of people who said 👍🏻
+    const hasNotHelpful = review.notHelpfulVoters.includes(voterId); // list of people who said 👎🏻
 
-    // если уже голосовал так же — ничего не делаем
+    // if person voted - it changes nothing
     if (type === "helpful" && hasHelpful) {
       return res.status(200).json(review);
     }
@@ -36,10 +38,10 @@ export default async function handler(req, res) {
       return res.status(200).json(review);
     }
 
-    // если голосовал противоположно — переключаем
+    // if person voted opposite - toggle
     if (type === "helpful" && hasNotHelpful) {
       review.notHelpfulVoters = review.notHelpfulVoters.filter((v) => v !== voterId);
-      review.notHelpfulCount = Math.max(0, review.notHelpfulCount - 1);
+      review.notHelpfulCount = Math.max(0, review.notHelpfulCount - 1); // "Math.max" is protection against negative numbers
     }
 
     if (type === "notHelpful" && hasHelpful) {
@@ -47,9 +49,9 @@ export default async function handler(req, res) {
       review.helpfulCount = Math.max(0, review.helpfulCount - 1);
     }
 
-    // добавляем новый голос
+    // add new vote
     if (type === "helpful") {
-      review.helpfulVoters.push(voterId);
+      review.helpfulVoters.push(voterId); // "push" add new value to the end of array
       review.helpfulCount += 1;
     } else {
       review.notHelpfulVoters.push(voterId);
@@ -57,7 +59,7 @@ export default async function handler(req, res) {
     }
 
     await review.save();
-    return res.status(200).json(review);
+    return res.status(200).json(review); // send actuall review to user
   } catch (error) {
     console.error("REVIEW VOTE ERROR:", error);
     return res.status(500).json({ error: error.message });

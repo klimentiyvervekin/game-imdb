@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import styled from "styled-components";
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
 const fetcher = async (url) => {
   const res = await fetch(url);
@@ -39,7 +41,42 @@ export default function ReviewSection({ gameId }) {
   const [updateText, setUpdateText] = useState("");
   const [updateError, setUpdateError] = useState("");
 
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [editRating, setEditRating] = useState(8);
+
+  const [editingUpdateKey, setEditingUpdateKey] = useState(null); // `${reviewId}:${index}`
+  const [editUpdateText, setEditUpdateText] = useState("");
+
+  const [hasSpoilers, setHasSpoilers] = useState(false);
+
+  // Update form
+  const [updateHasSpoilers, setUpdateHasSpoilers] = useState(false);
+
+  // edit review
+  const [editHasSpoilers, setEditHasSpoilers] = useState(false);
+
+  // edit update
+  const [editUpdateHasSpoilers, setEditUpdateHasSpoilers] = useState(false);
+
+  //---------------current time (seconds)------------//
   const clientId = useMemo(() => getClientId(), []);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  //--------------------------//
+
+  //----------------mm:ss format-------------//
+  function formatMs(ms) {
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const m = String(Math.floor(totalSec / 60)).padStart(2, "0");
+    const s = String(totalSec % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }
+  //-------------------------//
 
   // "const stats = useMemo" means "count stats but only if reviews changed" (because of useMemo)
   // "toFixed" do "9,33333" to "9,3"
@@ -57,7 +94,52 @@ export default function ReviewSection({ gameId }) {
   // if score 0 then 0, if not then summarise all scores to become a middle score of a game
   // reviews at the end means "only if reviews changed count a new average score"
 
-  //-----Delete-----//
+  //----------------edit review (update review too)----------------//
+  async function saveReviewEdit(review) {
+    const res = await fetch(`/api/reviews/${review._id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        authorId: clientId,
+        text: editText,
+        rating: editRating,
+        hasSpoilers: editHasSpoilers,
+      }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      alert(json?.error || "Failed to edit review");
+      return;
+    }
+
+    setEditingReviewId(null);
+    await mutate();
+  }
+
+  async function saveUpdateEdit(reviewId, index) {
+    const res = await fetch(`/api/reviews/${reviewId}/updates/${index}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        authorId: clientId,
+        text: editUpdateText,
+        hasSpoilers: editUpdateHasSpoilers,
+      }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      alert(json?.error || "Failed to edit update");
+      return;
+    }
+
+    setEditingUpdateKey(null);
+    await mutate();
+  }
+  //-----------------------//
+
+  //-----Delete review-----//
   async function handleDelete(reviewId) {
     const ok = confirm("Delete this review?");
     if (!ok) return;
@@ -73,7 +155,7 @@ export default function ReviewSection({ gameId }) {
     await mutate();
   }
 
-  //-----Update Review-----//
+  //-----Submit Update Review-----//
   async function submitUpdate(reviewId) {
     setUpdateError("");
 
@@ -81,7 +163,11 @@ export default function ReviewSection({ gameId }) {
       const res = await fetch(`/api/reviews/${reviewId}/updates`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: updateText }),
+        body: JSON.stringify({
+          text: updateText,
+          authorId: clientId,
+          hasSpoilers: updateHasSpoilers,
+        }),
       });
 
       const json = await res.json();
@@ -92,6 +178,7 @@ export default function ReviewSection({ gameId }) {
       }
 
       setUpdateText("");
+      setUpdateHasSpoilers(false);
       setOpenUpdateForId(null);
       await mutate();
     } catch (err) {
@@ -152,7 +239,13 @@ export default function ReviewSection({ gameId }) {
       const res = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId, rating, text }),
+        body: JSON.stringify({
+          gameId,
+          rating,
+          text,
+          authorId: clientId,
+          hasSpoilers,
+        }),
       });
 
       const json = await res.json();
@@ -164,6 +257,7 @@ export default function ReviewSection({ gameId }) {
 
       setText("");
       setRating(8);
+      setHasSpoilers(false);
 
       await mutate();
     } catch (err) {
@@ -172,6 +266,8 @@ export default function ReviewSection({ gameId }) {
       setIsSubmitting(false);
     }
   }
+
+  //---------------RETURN------------//
 
   return (
     <Wrap>
@@ -208,6 +304,22 @@ export default function ReviewSection({ gameId }) {
           </label>
         </Row>
 
+        {/* SPOILERS */}
+        <Row>
+          <label>
+            <input
+              type="checkbox"
+              checked={hasSpoilers}
+              onChange={(e) => setHasSpoilers(e.target.checked)}
+            />{" "}
+            This review contains spoilers
+          </label>
+          <Hint>
+            Please tick this if your review reveals story details, so others can
+            decide whether to read it.
+          </Hint>
+        </Row>
+
         {submitError && <ErrorText>{submitError}</ErrorText>}
 
         <button type="submit" disabled={isSubmitting}>
@@ -220,106 +332,255 @@ export default function ReviewSection({ gameId }) {
         {error && <p>Failed to load data</p>}
         {!isLoading && !error && reviews?.length === 0 && <p>No reviews yet</p>}
 
-        {(reviews || []).map((r) => (
-          <Card key={r._id}>
-            <Top>
-              <span>Rating: {r.rating}/10</span>
-              <small>{new Date(r.createdAt).toLocaleDateString()}</small>
-            </Top>
-            <p>{r.text}</p>
+        {(reviews || []).map((r) => {
+          const reviewAge = now - new Date(r.createdAt).getTime();
+          const reviewLeft = EDIT_WINDOW_MS - reviewAge;
 
-            {/* VOTE BUTTONS */}
-            <VotesRow>
-              <button
-                type="button"
-                onClick={() => voteReview(r._id, "helpful")}
-              >
-                Helpful {r.helpfulCount || 0}
-              </button>
-              <button
-                type="button"
-                onClick={() => voteReview(r._id, "notHelpful")}
-              >
-                Not helpful {r.notHelpfulCount || 0}
-              </button>
-            </VotesRow>
+          const canEditReview = r.authorId === clientId && reviewLeft > 0;
 
-            {/* DELETE */}
-            <button type="button" onClick={() => handleDelete(r._id)}>
-              Delete
-            </button>
+          return (
+            <Card key={r._id}>
+              <Top>
+                <span>Rating: {r.rating}/10</span>
+                <small>{new Date(r.createdAt).toLocaleDateString()}</small>
+                {r.hasSpoilers && <SpoilerTag>⚠️ Spoilers</SpoilerTag>}
+              </Top>
 
-            {/* SHOW UPDATES */}
-            {Array.isArray(r.updates) && r.updates.length > 0 && (
-              <Updates>
-                <strong>Updates:</strong>
+              {canEditReview && (
+                <p style={{ opacity: 0.7 }}>
+                  You can edit for: {formatMs(reviewLeft)}
+                </p>
+              )}
 
-                {r.updates.map((u, i) => (
-                  <UpdateItem key={u.createdAt + i}>
-                    <small>{new Date(u.createdAt).toLocaleDateString()}</small>
-                    <p>{u.text}</p>
+              {canEditReview && editingReviewId !== r._id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingReviewId(r._id);
+                    setEditText(r.text);
+                    setEditRating(r.rating);
+                    setEditHasSpoilers(Boolean(r.hasSpoilers));
+                  }}
+                >
+                  Edit review
+                </button>
+              )}
 
-                    {/* VOTE BUTTONS FOR UPDATE REVIEWS*/}
-                    <VotesRow>
-                      <button
-                        type="button"
-                        onClick={() => voteUpdate(r._id, i, "helpful")}
-                      >
-                        Helpful {u.helpfulCount || 0}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => voteUpdate(r._id, i, "notHelpful")}
-                      >
-                        Not helpful {u.notHelpfulCount || 0}
-                      </button>
-                    </VotesRow>
+              {canEditReview && editingReviewId === r._id && (
+                <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={editRating}
+                    onChange={(e) => setEditRating(e.target.value)}
+                  />
+                  <textarea
+                    rows={4}
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
 
-                    {/* DELETE UPDATE REVIEW BUTTON */}
+                  {/* edit spoilers checkbox */}
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={editHasSpoilers}
+                      onChange={(e) => setEditHasSpoilers(e.target.checked)}
+                    />{" "}
+                    This review contains spoilers
+                  </label>
+
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button type="button" onClick={() => saveReviewEdit(r)}>
+                      Save
+                    </button>
                     <button
                       type="button"
-                      onClick={() => handleDeleteUpdate(r._id, i)}
+                      onClick={() => setEditingReviewId(null)}
                     >
-                      Delete update
+                      Cancel
                     </button>
-                  </UpdateItem>
-                ))}
-              </Updates>
-            )}
+                  </div>
+                </div>
+              )}
 
-            {/* "OPEN FORM" BUTTON */}
-            <button
-              type="button"
-              onClick={() => {
-                setUpdateError("");
-                setUpdateText("");
-                setOpenUpdateForId(openUpdateForId === r._id ? null : r._id); // toggle logic for form
-              }}
-            >
-              Add update
-            </button>
+              {editingReviewId !== r._id && <p>{r.text}</p>}
 
-            {openUpdateForId === r._id && (
-              <UpdateForm
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  submitUpdate(r._id);
+              {/* VOTE BUTTONS */}
+              <VotesRow>
+                <button
+                  type="button"
+                  onClick={() => voteReview(r._id, "helpful")}
+                >
+                  Helpful {r.helpfulCount || 0}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => voteReview(r._id, "notHelpful")}
+                >
+                  Not helpful {r.notHelpfulCount || 0}
+                </button>
+              </VotesRow>
+
+              {/* DELETE */}
+              <button type="button" onClick={() => handleDelete(r._id)}>
+                Delete
+              </button>
+
+              {/* SHOW UPDATES */}
+              {Array.isArray(r.updates) && r.updates.length > 0 && (
+                <Updates>
+                  <strong>Updates:</strong>
+
+                  {r.updates.map((u, i) => {
+                    const key = `${r._id}:${i}`;
+
+                    const updateAge = now - new Date(u.createdAt).getTime();
+                    const updateLeft = EDIT_WINDOW_MS - updateAge;
+                    const canEditUpdate =
+                      u.authorId === clientId && updateLeft > 0;
+
+                    return (
+                      <UpdateItem key={u.createdAt + i}>
+                        <small>
+                          {new Date(u.createdAt).toLocaleDateString()}
+                          {u.hasSpoilers && (
+                            <SpoilerTag>⚠️ Spoilers</SpoilerTag>
+                          )}
+                        </small>
+
+                        {editingUpdateKey !== key && <p>{u.text}</p>}
+
+                        {canEditUpdate && (
+                          <p style={{ opacity: 0.7 }}>
+                            You can edit for: {formatMs(updateLeft)}
+                          </p>
+                        )}
+
+                        {canEditUpdate && editingUpdateKey !== key && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingUpdateKey(key);
+                              setEditUpdateText(u.text);
+                              setEditUpdateHasSpoilers(Boolean(u.hasSpoilers));
+                            }}
+                          >
+                            Edit update
+                          </button>
+                        )}
+
+                        {canEditUpdate && editingUpdateKey === key && (
+                          <div
+                            style={{ display: "grid", gap: 8, marginTop: 6 }}
+                          >
+                            <textarea
+                              rows={3}
+                              value={editUpdateText}
+                              onChange={(e) =>
+                                setEditUpdateText(e.target.value)
+                              }
+                            />
+                            <label>
+
+                              {/* edit spoilers update checkbox */}
+                              <input
+                                type="checkbox"
+                                checked={editUpdateHasSpoilers}
+                                onChange={(e) =>
+                                  setEditUpdateHasSpoilers(e.target.checked)
+                                }
+                              />{" "}
+                              This update contains spoilers
+                            </label>
+
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button
+                                type="button"
+                                onClick={() => saveUpdateEdit(r._id, i)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingUpdateKey(null)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* VOTE BUTTONS FOR UPDATE REVIEWS*/}
+                        <VotesRow>
+                          <button
+                            type="button"
+                            onClick={() => voteUpdate(r._id, i, "helpful")}
+                          >
+                            Helpful {u.helpfulCount || 0}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => voteUpdate(r._id, i, "notHelpful")}
+                          >
+                            Not helpful {u.notHelpfulCount || 0}
+                          </button>
+                        </VotesRow>
+
+                        {/* DELETE UPDATE REVIEW BUTTON */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteUpdate(r._id, i)}
+                        >
+                          Delete update
+                        </button>
+                      </UpdateItem>
+                    );
+                  })}
+                </Updates>
+              )}
+
+              {/* "OPEN FORM" BUTTON */}
+              <button
+                type="button"
+                onClick={() => {
+                  setUpdateError("");
+                  setUpdateText("");
+                  setOpenUpdateForId(openUpdateForId === r._id ? null : r._id); // toggle logic for form
                 }}
               >
-                <textarea
-                  rows={3}
-                  value={updateText}
-                  onChange={(e) => setUpdateText(e.target.value)}
-                  placeholder="Write update..."
-                />
+                Add update
+              </button>
 
-                {updateError && <ErrorText>{updateError}</ErrorText>}
+              {openUpdateForId === r._id && (
+                <UpdateForm>
+                  <textarea
+                    rows={3}
+                    value={updateText}
+                    onChange={(e) => setUpdateText(e.target.value)}
+                    placeholder="Write update..."
+                  />
+                  {/* add update spoilers */}
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={updateHasSpoilers}
+                      onChange={(e) => setUpdateHasSpoilers(e.target.checked)}
+                    />{" "}
+                    This update contains spoilers
+                  </label>
 
-                <button type="submit">Save update</button>
-              </UpdateForm>
-            )}
-          </Card>
-        ))}
+                  {updateError && <ErrorText>{updateError}</ErrorText>}
+
+                  <button type="button" onClick={() => submitUpdate(r._id)}>
+                    Save update
+                  </button>
+                </UpdateForm>
+              )}
+            </Card>
+          );
+        })}
       </List>
     </Wrap>
   );
@@ -446,4 +707,18 @@ const VotesRow = styled.div`
     background: #fff;
     cursor: pointer;
   }
+`;
+
+const SpoilerTag = styled.span`
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border: 1px solid #f2b705;
+  border-radius: 999px;
+  font-size: 12px;
+`;
+const Hint = styled.p`
+  margin: 6px 0 0;
+  font-size: 12px;
+  opacity: 0.75;
 `;

@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     await dbConnect();
 
     const { id } = req.query;
-    const { text } = req.body;
+    const { text, authorId, hasSpoilers } = req.body;
 
     const trimmed = (text || "").trim();
     if (!trimmed) {
@@ -24,7 +24,11 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Review not found" });
     }
 
-    review.updates.push({ text: trimmed });
+    if (!authorId) {
+      return res.status(400).json({ error: "authorId is required" });
+    }
+
+    review.updates.push({ text: trimmed, authorId, hasSpoilers: Boolean(hasSpoilers), createdAt: new Date(), });
     await review.save();
 
     return res.status(201).json(review);
