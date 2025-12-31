@@ -1,11 +1,11 @@
 import PostCard from "./PostCard";
 import styled from "styled-components";
 
-export default function PostList({ posts }) {
+export default function PostList({ posts = [], onPostsChange }) {
   return (
     <Grid>    
       {posts.map((post) => (
-        <PostCard key={post._id} post={post} />
+        <PostCard key={post._id} post={post} onChange={onPostsChange} />
       ))}
     </Grid>
   );

@@ -2,23 +2,60 @@ import { dbConnect } from "../../../db/connect";
 import Post from "../../../db/models/Post";
 
 export default async function handler(req, res) {
-  try {
-    await dbConnect();
+  await dbConnect();
 
-    if (req.method !== "GET") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
+  // GET /api/posts  (latest posts)
+  // GET /api/posts?gameId=<id>  (posts for one game)
+  if (req.method === "GET") {
+    const { gameId } = req.query;
 
-    const posts = await Post.find() // find all posts in the collection
-      .populate("gameId", "title slug coverUrl") // populate says "took gameId go to collection games find item with this id and substitute it for gameId"
-      .sort({ createdAt: -1 });
+    const filter = gameId ? { gameId } : {};
+    const posts = await Post.find(filter).sort({ createdAt: -1 }).limit(50);
 
     return res.status(200).json(posts);
-  } catch (error) {
-    console.error("DB ERROR:", error);
-    return res.status(500).json({
-      error: error.message,
-      name: error.name,
-    });
   }
+
+  // POST /api/posts
+  if (req.method === "POST") {
+    const {
+      gameId,
+      content,
+      imageUrl = "",
+      videoUrl = "",
+      text,
+      authorId = null,
+    } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Post text cannot be empty" });
+    }
+    if (!gameId) {
+      return res.status(400).json({ error: "gameId is required" });
+    }
+
+    const trimmed = (content || "").trim();
+    if (!trimmed)
+      return res.status(400).json({ error: "post text cannot be empty" });
+
+    if (!authorId) {
+      return res.status(400).json({ error: "authorId is required" });
+    }
+
+    const post = await Post.create({
+      gameId,
+      content: trimmed,
+      text: text.trim(),
+      imageUrl,
+      videoUrl,
+      authorId,
+    });
+
+    const populated = await Post.findById(created._id).populate(
+      "gameId",
+      "title slug"
+    );
+    return res.status(201).json(post);
+  }
+
+  return res.status(405).json({ error: "Method not allowed" });
 }

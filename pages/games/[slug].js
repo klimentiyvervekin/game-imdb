@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import styled from "styled-components";
 import ReviewSection from "../../components/ReviewSection";
+import PostSection from "@/components/PostSection";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -104,10 +105,8 @@ export default function GamePage() {
               ` (${game.screenshotsCount} photos`}
             {typeof game.videosCount === "number" &&
               `, ${game.videosCount} videos`}
-            
           </MediaButton>
         </Link>
-
       </Card>
 
       <Section>
@@ -115,8 +114,7 @@ export default function GamePage() {
       </Section>
 
       <Section>
-        <h2>Posts</h2>
-        <p>No posts yet</p>
+        <PostSection gameId={game._id} />
       </Section>
     </Page>
   );

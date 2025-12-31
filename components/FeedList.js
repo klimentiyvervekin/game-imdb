@@ -2,24 +2,34 @@ import styled from "styled-components";
 import GameCard from "./GameCard";
 import PostCard from "./PostCard";
 
-export default function FeedList({ games = [], posts = [] }) {
-  const feed = [
-    ...games.map((g) => ({ type: "game", ...g })), // choose every game and change it a little bit (write "type: game")
-    ...posts.map((p) => ({ type: "post", ...p })), // i need this to make return easier than "map" 2 times
-  ];
+export default function FeedList({ games = [], posts = [], onPostChange }) {
+  const safeGames = Array.isArray(games) ? games : [];
+  const safePosts = Array.isArray(posts) ? posts : [];
 
-return (
-  <Grid>
-    {feed.map((item) => (
-      <Item key={`${item.type}-${item._id}`}>
-        {item.type === "game" ? (
-          <GameCard game={item} />
-        ) : (
-          <PostCard post={item} />
-        )}
-      </Item>
-    ))}
-  </Grid>
+  const handlePostsChange =
+    typeof onPostChange === "function" ? onPostsChange : () => {};
+
+  const feed = [
+    ...safeGames.map((g) => ({ type: "game", ...g })),
+    ...safePosts.map((p) => ({ type: "post", ...p })),
+  ].sort((a, b) => {
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
+    return bTime - aTime; // new to the up
+  });
+
+  return (
+    <Grid>
+      {feed.map((item) => (
+        <Item key={`${item.type}-${item._id}`}>
+          {item.type === "game" ? (
+            <GameCard game={item} />
+          ) : (
+            <PostCard post={item} onChange={handlePostsChange} />
+          )}
+        </Item>
+      ))}
+    </Grid>
   );
 }
 
