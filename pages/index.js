@@ -6,7 +6,7 @@ const fetcher = (url) => fetch(url).then((r) => r.json());
 
 export default function HomePage() {
   const { data: games, error: gamesError } = useSWR("/api/games", fetcher);
-  const { data: posts, error: postsError } = useSWR("/api/posts", fetcher);
+  const { data: posts, error: postsError, mutate: mutatePosts } = useSWR("/api/posts", fetcher);
 
   if (gamesError || postsError) return <p>Failed to load data</p>;
   if (!games || !posts) return <p>Loading...</p>;

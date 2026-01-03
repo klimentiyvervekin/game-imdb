@@ -2,12 +2,12 @@ import styled from "styled-components";
 import GameCard from "./GameCard";
 import PostCard from "./PostCard";
 
-export default function FeedList({ games = [], posts = [], onPostChange }) {
+export default function FeedList({ games = [], posts = [], onPostsChange }) {
   const safeGames = Array.isArray(games) ? games : [];
   const safePosts = Array.isArray(posts) ? posts : [];
 
   const handlePostsChange =
-    typeof onPostChange === "function" ? onPostsChange : () => {};
+    typeof onPostsChange === "function" ? onPostsChange : () => {};
 
   const feed = [
     ...safeGames.map((g) => ({ type: "game", ...g })),

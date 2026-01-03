@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
       const updated = await Post.findByIdAndUpdate(
         id,
-        { content: trimmed, imageUrl: imageUrl || "", videoUrl: VideoUrl || "" },
+        { content: trimmed, imageUrl: imageUrl || "", videoUrl: videoUrl || "" },
         { new: true }
       ).populate("gameId", "title slug");
 

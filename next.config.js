@@ -6,7 +6,7 @@ const nextConfig = {
   reactStrictMode: true,
 
   images: {
-    domains: ["media.rawg.io", "screenshots.rawg.io"],
+    domains: ["media.rawg.io", "screenshots.rawg.io", "res.cloudinary.com"],
   },
 
   webpack(config) {
@@ -21,3 +21,6 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+
+// Next/Image по умолчанию разрешает только определённые домены
+// Cloudinary — внешний домен, поэтому его добавляют в next.config.js

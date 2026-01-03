@@ -1,4 +1,3 @@
-// db/models/Post.js
 import mongoose from "mongoose";
 
 const PostSchema = new mongoose.Schema(
@@ -9,36 +8,35 @@ const PostSchema = new mongoose.Schema(
       required: true,
     },
 
-    content: { 
-      type: String, 
-      required: true, 
-      trim: true 
-    },
-
-    imageUrl: { 
-      type: String, 
-      default: "" 
-    },
-
-    videoUrl: { 
-      type: String, 
-      default: "" 
-    },
-
-    authorId: {
-      type: String,
-      required: true, // clientId until now
-    },
-
-    text: {
+    content: {
       type: String,
       required: true,
       trim: true,
     },
 
+    imageUrl: {
+      type: String,
+      default: "",
+    },
+
+    videoUrl: {
+      type: String,
+      default: "",
+    },
+
+    authorId: {
+      type: String,
+      required: true,
+    },
+
+    likedBy: {
+      type: [String],
+      default: [],
+    },
+
     type: {
       type: String,
-      enum: ["text"], // later: image, link, video
+      enum: ["text"],
       default: "text",
     },
   },

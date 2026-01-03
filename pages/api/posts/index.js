@@ -10,7 +10,10 @@ export default async function handler(req, res) {
     const { gameId } = req.query;
 
     const filter = gameId ? { gameId } : {};
-    const posts = await Post.find(filter).sort({ createdAt: -1 }).limit(50);
+    const posts = await Post.find(filter)
+      .populate("gameId", "title slug")
+      .sort({ createdAt: -1 })
+      .limit(50);
 
     return res.status(200).json(posts);
   }
@@ -22,13 +25,9 @@ export default async function handler(req, res) {
       content,
       imageUrl = "",
       videoUrl = "",
-      text,
       authorId = null,
     } = req.body;
 
-    if (!text || !text.trim()) {
-      return res.status(400).json({ error: "Post text cannot be empty" });
-    }
     if (!gameId) {
       return res.status(400).json({ error: "gameId is required" });
     }
@@ -37,24 +36,19 @@ export default async function handler(req, res) {
     if (!trimmed)
       return res.status(400).json({ error: "post text cannot be empty" });
 
-    if (!authorId) {
-      return res.status(400).json({ error: "authorId is required" });
-    }
-
     const post = await Post.create({
       gameId,
       content: trimmed,
-      text: text.trim(),
       imageUrl,
       videoUrl,
       authorId,
     });
 
-    const populated = await Post.findById(created._id).populate(
+    const populated = await Post.findById(post._id).populate(
       "gameId",
       "title slug"
     );
-    return res.status(201).json(post);
+    return res.status(201).json(populated);
   }
 
   return res.status(405).json({ error: "Method not allowed" });
