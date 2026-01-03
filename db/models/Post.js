@@ -34,6 +34,30 @@ const PostSchema = new mongoose.Schema(
       default: [],
     },
 
+    comments: {
+      type: [
+        {
+          _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+          authorId: { type: String, required: true },
+          text: { type: String, required: true, trim: true },
+          createdAt: { type: Date, default: Date.now },
+
+          replies: {
+            type: [
+              {
+                _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+                authorId: { type: String, required: true },
+                text: { type: String, required: true, trim: true },
+                createdAt: { type: Date, default: Date.now },
+              },
+            ],
+            default: [],
+          },
+        },
+      ],
+      default: [],
+    },
+
     type: {
       type: String,
       enum: ["text"],
