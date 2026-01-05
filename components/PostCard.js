@@ -13,6 +13,25 @@ function getClientId() {
   return id;
 }
 
+async function uploadToCloudinary(file, kind) {
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ file: base64, kind }),
+  });
+
+  const json = await res.json();
+  if (!res.ok) throw new Error(json?.error || "Upload failed");
+  return json.url;
+}
+
 export default function PostCard({ post, onChange }) {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(post.content || "");
@@ -22,6 +41,12 @@ export default function PostCard({ post, onChange }) {
 
   const [replyOpenForId, setReplyOpenForId] = useState(null);
   const [replyText, setReplyText] = useState("");
+
+  const [newImageFile, setNewImageFile] = useState(null);
+  const [newVideoFile, setNewVideoFile] = useState(null);
+
+  const [removeImage, setRemoveImage] = useState(false);
+  const [removeVideo, setRemoveVideo] = useState(false);
 
   const game = post.gameId; // после populate это объект: {title, slug, _id}
 
@@ -70,24 +95,52 @@ export default function PostCard({ post, onChange }) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
-    const trimmed = text.trim();
-    if (!trimmed) return alert("Post content cannot be empty");
+    try {
+      const trimmed = text.trim();
+      if (!trimmed) return alert("Post content cannot be empty");
 
-    const game = post.gameId;
-    const gameId = typeof game === "object" ? game._id : game;
+      const game = post.gameId;
+      const gameId = typeof game === "object" ? game._id : game;
 
-    setLoading(true);
-    const res = await fetch(`/api/posts/${post._id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: trimmed, gameId }),
-    });
-    setLoading(false);
+      setLoading(true);
 
-    if (!res.ok) return alert("Failed to update post");
+      // объявляем переменные
+      let imageUrlToSend = undefined; // undefined - не менять
+      let videoUrlToSend = undefined;
 
-    setIsEditing(false);
-    onChange?.();
+      // если пользователь нажал remove
+      if (removeImage) imageUrlToSend = ""; // удалить
+      if (removeVideo) videoUrlToSend = "";
+
+      // если выбрал новый файл - загружаем
+      if (newImageFile)
+        imageUrlToSend = await uploadToCloudinary(newImageFile, "image");
+      if (newVideoFile)
+        videoUrlToSend = await uploadToCloudinary(newVideoFile, "video");
+
+      // send patch
+      const res = await fetch(`/api/posts/${post._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: trimmed,
+          gameId,
+          ...(imageUrlToSend !== undefined ? { imageUrl: imageUrlToSend } : {}), // we send ONLY if we have this:
+          ...(videoUrlToSend !== undefined ? { videoUrl: videoUrlToSend } : {}),
+        }),
+      });
+
+      setLoading(false);
+
+      if (!res.ok) throw new Error("Failed to update post");
+
+      setIsEditing(false);
+      onChange?.();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function submitComment(e) {
@@ -157,6 +210,32 @@ export default function PostCard({ post, onChange }) {
 
     setReplyText("");
     setReplyOpenForId(null);
+    onChange?.();
+  }
+
+  async function deleteReply(commentId, replyId) {
+    const clientId = getClientId();
+    if (!clientId) return;
+
+    const ok = confirm("Delete this reply?");
+    if (!ok) return;
+
+    setLoading(true);
+    const res = await fetch(
+      `/api/posts/${post._id}/comments/${commentId}/replies/${replyId}`,
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId }),
+      }
+    );
+    setLoading(false);
+
+    if (!res.ok) {
+      alert("Failed to delete reply");
+      return;
+    }
+
     onChange?.();
   }
 
@@ -236,21 +315,42 @@ export default function PostCard({ post, onChange }) {
                           gap: 6,
                         }}
                       >
-                        {c.replies.map((r) => (
-                          <div
-                            key={r._id}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #f0f0f0",
-                              borderRadius: 8,
-                            }}
-                          >
-                            <div style={{ fontSize: 12, opacity: 0.7 }}>
-                              {new Date(r.createdAt).toLocaleString()}
+                        {c.replies.map((r) => {
+                          const clientId = getClientId();
+                          const isMineReply = r.authorId === clientId;
+
+                          return (
+                            <div
+                              key={r._id}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #f0f0f0",
+                                borderRadius: 8,
+                              }}
+                            >
+                              <div style={{ fontSize: 12, opacity: 0.7 }}>
+                                {new Date(r.createdAt).toLocaleString()}
+                              </div>
+
+                              <div style={{ marginTop: 4 }}>{r.text}</div>
+
+                              {isMineReply && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteReply(c._id, r._id)}
+                                  style={{
+                                    marginTop: 4,
+                                    fontSize: 12,
+                                    color: "crimson",
+                                  }}
+                                  disabled={loading}
+                                >
+                                  Delete
+                                </button>
+                              )}
                             </div>
-                            <div>{r.text}</div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 
@@ -341,7 +441,13 @@ export default function PostCard({ post, onChange }) {
         {!isEditing ? (
           <button
             type="button"
-            onClick={() => setIsEditing(true)}
+            onClick={() => {
+              setIsEditing(true);
+              setNewImageFile(null);
+              setNewVideoFile(null);
+              setRemoveImage(false);
+              setRemoveVideo(false);
+            }}
             disabled={loading}
           >
             Edit

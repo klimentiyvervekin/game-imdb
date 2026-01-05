@@ -22,7 +22,7 @@ function getClientId() {
 async function uploadToCloudinary(file, kind) {
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result); // data:image/...;base64,...
+    reader.onload = () => resolve(reader.result); // data:image/.  ...;base64,...
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -149,6 +149,25 @@ export default function CreatePost({ onCreated }) {
           accept="image/*"
           onChange={(e) => setImageFile(e.target.files?.[0] || null)}
         />
+        {imageFile && (
+          <div
+            style={{
+              marginTop: 6,
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+            }}
+          >
+            <span style={{ fontSize: 12, opacity: 0.7 }}>{imageFile.name}</span>
+            <button
+              type="button"
+              onClick={() => setImageFile(null)}
+              style={{ fontSize: 12 }}
+            >
+              Remove
+            </button>
+          </div>
+        )}
       </label>
 
       <label style={{ display: "block", marginBottom: 8 }}>
@@ -158,6 +177,25 @@ export default function CreatePost({ onCreated }) {
           accept="video/*"
           onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
         />
+        {videoFile && (
+          <div
+            style={{
+              marginTop: 6,
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+            }}
+          >
+            <span style={{ fontSize: 12, opacity: 0.7 }}>{videoFile.name}</span>
+            <button
+              type="button"
+              onClick={() => setVideoFile(null)}
+              style={{ fontSize: 12 }}
+            >
+              Remove
+            </button>
+          </div>
+        )}
       </label>
 
       {err && <p style={{ color: "crimson" }}>{err}</p>}
