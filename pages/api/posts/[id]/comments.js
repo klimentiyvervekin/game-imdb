@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   await dbConnect();
 
   if (req.method === "POST") {
-    const { clientId, text } = req.body;
+    const { clientId, text, imageUrl = "" } = req.body;
 
     const trimmed = (text || "").trim();
     if (!clientId) return res.status(400).json({ error: "clientId is required" });
@@ -19,6 +19,7 @@ export default async function handler(req, res) {
     post.comments.push({
       authorId: clientId,
       text: trimmed,
+      imageUrl,
     });
 
     await post.save();

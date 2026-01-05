@@ -50,6 +50,8 @@ export default function CreatePost({ onCreated }) {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [fileKey, setFileKey] = useState(0); // state for input reset
+
   async function submit(e) {
     e.preventDefault();
     setErr("");
@@ -97,6 +99,7 @@ export default function CreatePost({ onCreated }) {
       setGameId("");
       setImageFile(null);
       setVideoFile(null);
+      setFileKey((k) => k + 1);
       onCreated?.();
     } catch (e2) {
       setErr(e2.message || "Failed to create post");
@@ -145,6 +148,7 @@ export default function CreatePost({ onCreated }) {
       <label style={{ display: "block", marginBottom: 8 }}>
         Image (optional)
         <input
+          key={`img-${fileKey}`}
           type="file"
           accept="image/*"
           onChange={(e) => setImageFile(e.target.files?.[0] || null)}
@@ -161,7 +165,10 @@ export default function CreatePost({ onCreated }) {
             <span style={{ fontSize: 12, opacity: 0.7 }}>{imageFile.name}</span>
             <button
               type="button"
-              onClick={() => setImageFile(null)}
+              onClick={() => {
+                setImageFile(null);
+                setFileKey((k) => k + 1);
+              }}
               style={{ fontSize: 12 }}
             >
               Remove
@@ -173,6 +180,7 @@ export default function CreatePost({ onCreated }) {
       <label style={{ display: "block", marginBottom: 8 }}>
         Video (optional)
         <input
+          key={`vid-${fileKey}`}
           type="file"
           accept="video/*"
           onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
@@ -189,7 +197,10 @@ export default function CreatePost({ onCreated }) {
             <span style={{ fontSize: 12, opacity: 0.7 }}>{videoFile.name}</span>
             <button
               type="button"
-              onClick={() => setVideoFile(null)}
+              onClick={() => {
+                setVideoFile(null);
+                setFileKey((k) => k + 1);
+              }}
               style={{ fontSize: 12 }}
             >
               Remove

@@ -11,7 +11,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     }
 
-    const { clientId, text } = req.body;
+    const { clientId, text, imageUrl = "", replyToId = null } = req.body;
     const trimmed = (text || "").trim();
 
     if (!clientId) return res.status(400).json({ error: "clientId is required" });
@@ -29,6 +29,8 @@ export default async function handler(req, res) {
     comment.replies.push({
       authorId: clientId,
       text: trimmed,
+      imageUrl,
+      replyToId,
     });
 
     await post.save();

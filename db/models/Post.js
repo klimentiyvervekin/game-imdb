@@ -40,6 +40,7 @@ const PostSchema = new mongoose.Schema(
           _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
           authorId: { type: String, required: true },
           text: { type: String, required: true, trim: true },
+          imageUrl: { type: String, default: "" },
           createdAt: { type: Date, default: Date.now },
 
           replies: {
@@ -48,6 +49,11 @@ const PostSchema = new mongoose.Schema(
                 _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
                 authorId: { type: String, required: true },
                 text: { type: String, required: true, trim: true },
+                imageUrl: { type: String, default: "" },
+                replyToId: {
+                  type: mongoose.Schema.Types.ObjectId,
+                  default: null,
+                },
                 createdAt: { type: Date, default: Date.now },
               },
             ],

@@ -17,7 +17,8 @@ export default async function handler(req, res) {
       const { content, imageUrl, videoUrl } = req.body;
 
       const trimmed = (content || "").trim();
-      if (!trimmed) return res.status(400).json({ error: "Post content cannot be empty" });
+      if (!trimmed) 
+        return res.status(400).json({ error: "Post content cannot be empty" });
 
       // собираем ток те поля которые реально хотим обновить
       const update = { content: trimmed };
@@ -25,11 +26,8 @@ export default async function handler(req, res) {
       if (imageUrl !== undefined) update.imageUrl = imageUrl;
       if (videoUrl !== undefined) update.videoUrl = videoUrl;
 
-      const updated = await Post.findByIdAndUpdate(
-        id,
-        { content: trimmed, imageUrl: imageUrl || "", videoUrl: videoUrl || "" },
-        { new: true }
-      ).populate("gameId", "title slug");
+      const updated = await Post.findByIdAndUpdate(id, update, { new: true })
+        .populate("gameId", "title slug");
 
       if (!updated) return res.status(404).json({ error: "Post not found" });
       return res.status(200).json(updated);

@@ -38,15 +38,23 @@ export default function PostCard({ post, onChange }) {
   const [loading, setLoading] = useState(false);
 
   const [commentText, setCommentText] = useState("");
+  const [commentImageFile, setCommentImageFile] = useState(null);
 
   const [replyOpenForId, setReplyOpenForId] = useState(null);
   const [replyText, setReplyText] = useState("");
+  const [replyImageFile, setReplyImageFile] = useState(null);
+  const [replyTo, setReplyTo] = useState(null); // objects like { commentId, replyToId }
 
   const [newImageFile, setNewImageFile] = useState(null);
   const [newVideoFile, setNewVideoFile] = useState(null);
 
   const [removeImage, setRemoveImage] = useState(false);
   const [removeVideo, setRemoveVideo] = useState(false);
+
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState("");
+
+  const [originalPost, setOriginalPost] = useState(null);
 
   const game = post.gameId; // после populate это объект: {title, slug, _id}
 
@@ -135,6 +143,7 @@ export default function PostCard({ post, onChange }) {
       if (!res.ok) throw new Error("Failed to update post");
 
       setIsEditing(false);
+      setOriginalPost(null);
       onChange?.();
     } catch (err) {
       alert(err.message);
@@ -152,19 +161,46 @@ export default function PostCard({ post, onChange }) {
     if (!trimmed) return;
 
     setLoading(true);
+    try {
+      let imageUrl = "";
+      if (commentImageFile) {
+        imageUrl = await uploadToCloudinary(commentImageFile, "image");
+      }
 
-    const res = await fetch(`/api/posts/${post._id}/comments`, {
-      method: "POST",
+      const res = await fetch(`/api/posts/${post._id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId, text: trimmed, imageUrl }),
+      });
+
+      if (!res.ok) return alert("Failed to add comment");
+
+      setCommentText("");
+      setCommentImageFile(null);
+      onChange?.(); // подтянет обновлённые посты через mutate
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveCommentEdit(commentId) {
+    const clientId = getClientId();
+    const trimmed = editCommentText.trim();
+    if (!trimmed) return alert("Comment cannot be empty");
+
+    setLoading(true);
+    const res = await fetch(`/api/posts/${post._id}/comments/${commentId}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ clientId, text: trimmed }),
     });
-
     setLoading(false);
 
-    if (!res.ok) return alert("Failed to add comment");
+    if (!res.ok) return alert("Failed to edit comment");
 
-    setCommentText("");
-    onChange?.(); // подтянет обновлённые посты через mutate
+    setEditingCommentId(null);
+    setEditCommentText("");
+    onChange?.();
   }
 
   async function deleteComment(commentId) {
@@ -193,24 +229,40 @@ export default function PostCard({ post, onChange }) {
   async function submitReply(commentId) {
     const clientId = getClientId();
     const trimmed = replyText.trim();
-    if (!trimmed) return;
+    if (!trimmed) return; // not with "&& !replyImageFile"
 
     setLoading(true);
-    const res = await fetch(
-      `/api/posts/${post._id}/comments/${commentId}/replies`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, text: trimmed }),
+    try {
+      let imageUrl = "";
+      if (replyImageFile) {
+        imageUrl = await uploadToCloudinary(replyImageFile, "image");
       }
-    );
-    setLoading(false);
 
-    if (!res.ok) return alert("Failed to reply");
+      const res = await fetch(
+        `/api/posts/${post._id}/comments/${commentId}/replies`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientId,
+            text: trimmed,
+            imageUrl,
+            replyToId: replyTo?.replyToId || null, // reply to reply comments and everything
+          }),
+        }
+      );
 
-    setReplyText("");
-    setReplyOpenForId(null);
-    onChange?.();
+      setLoading(false);
+      if (!res.ok) return alert("Failed to reply");
+
+      setReplyText("");
+      setReplyImageFile(null);
+      setReplyOpenForId(null);
+      onChange?.();
+    } catch (e) {
+      setLoading(false);
+      alert(e.message);
+    }
   }
 
   async function deleteReply(commentId, replyId) {
@@ -282,6 +334,99 @@ export default function PostCard({ post, onChange }) {
             />
           )}
 
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            {!isEditing ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setOriginalPost({
+                    content: post.content,
+                    imageUrl: post.imageUrl,
+                    videoUrl: post.videoUrl,
+                  });
+
+                  setText(post.content);
+                  setIsEditing(true);
+
+                  setNewImageFile(null);
+                  setNewVideoFile(null);
+                  setRemoveImage(false);
+                  setRemoveVideo(false);
+                }}
+                disabled={loading}
+              >
+                Edit
+              </button>
+            ) : (
+              <>
+                <button type="button" onClick={save} disabled={loading}>
+                  Save changes
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (originalPost) {
+                      setText(originalPost.content);
+                      setRemoveImage(false);
+                      setRemoveVideo(false);
+                      setNewImageFile(null);
+                      setNewVideoFile(null);
+                    }
+
+                    setIsEditing(false);
+                    setOriginalPost(null);
+                    disabled = { loading };
+                  }}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+
+            <button type="button" onClick={del} disabled={loading}>
+              Delete
+            </button>
+
+            <button type="button" onClick={toggleLike} disabled={loading}>
+              {likedByMe ? "Unlike" : "Like"} ({likesCount})
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Write a comment..."
+                style={{ flex: 1 }}
+              />
+              <button type="button" onClick={submitComment} disabled={loading}>
+                Send
+              </button>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setCommentImageFile(e.target.files?.[0] || null)
+                }
+              />
+
+              {commentImageFile && (
+                <button
+                  type="button"
+                  onClick={() => setCommentImageFile(null)}
+                  disabled={loading}
+                >
+                  Remove image
+                </button>
+              )}
+            </div>
+          </div>
+
           <div style={{ marginTop: 10 }}>
             <strong style={{ fontSize: 13 }}>Comments</strong>
 
@@ -303,7 +448,96 @@ export default function PostCard({ post, onChange }) {
                       {new Date(c.createdAt).toLocaleString()}
                     </div>
 
-                    <div style={{ marginTop: 4 }}>{c.text}</div>
+                    {editingCommentId !== c._id ? (
+                      <div style={{ marginTop: 4 }}>{c.text}</div>
+                    ) : (
+                      <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
+                        <input
+                          value={editCommentText}
+                          onChange={(e) => setEditCommentText(e.target.value)}
+                          style={{ width: "100%" }}
+                        />
+
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            type="button"
+                            onClick={() => saveCommentEdit(c._id)}
+                            disabled={loading}
+                          >
+                            Save
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCommentId(null);
+                              setEditCommentText("");
+                            }}
+                            disabled={loading}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {c.imageUrl && (
+                      <Image
+                        src={c.imageUrl}
+                        alt=""
+                        width={600}
+                        height={400}
+                        style={{
+                          width: "100%",
+                          height: "auto",
+                          borderRadius: 8,
+                          marginTop: 6,
+                        }}
+                      />
+                    )}
+
+                    {/* COMMENT ACTIONS */}
+                    <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReplyOpenForId(
+                            replyOpenForId === c._id ? null : c._id
+                          );
+                          setReplyText("");
+                          setReplyImageFile(null);
+                          setReplyTo({ commentId: c._id, replyToId: null });
+                        }}
+                        style={{ fontSize: 12 }}
+                      >
+                        Reply
+                      </button>
+
+                      {isMine && editingCommentId !== c._id && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCommentId(c._id);
+                            setEditCommentText(c.text);
+                          }}
+                          style={{ fontSize: 12 }}
+                          disabled={loading}
+                        >
+                          Edit
+                        </button>
+                      )}
+
+                      {isMine && (
+                        <button
+                          type="button"
+                          onClick={() => deleteComment(c._id)}
+                          style={{ fontSize: 12, color: "crimson" }}
+                          disabled={loading}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
 
                     {/* replies list */}
                     {Array.isArray(c.replies) && c.replies.length > 0 && (
@@ -332,7 +566,44 @@ export default function PostCard({ post, onChange }) {
                                 {new Date(r.createdAt).toLocaleString()}
                               </div>
 
+                              {r.replyToId && (
+                                <div style={{ fontSize: 12, opacity: 0.6 }}>
+                                  Reply to: {String(r.replyToId).slice(-6)}
+                                </div>
+                              )}
+
                               <div style={{ marginTop: 4 }}>{r.text}</div>
+
+                              <button
+                                type="button"
+                                style={{ marginTop: 6, fontSize: 12 }}
+                                onClick={() => {
+                                  setReplyOpenForId(c._id); // открываем форму под этим комментом
+                                  setReplyText("");
+                                  setReplyImageFile(null);
+                                  setReplyTo({
+                                    commentId: c._id,
+                                    replyToId: r._id,
+                                  }); //  отвечаем конкретному reply
+                                }}
+                              >
+                                Reply
+                              </button>
+
+                              {r.imageUrl && (
+                                <Image
+                                  src={r.imageUrl}
+                                  alt=""
+                                  width={600}
+                                  height={400}
+                                  style={{
+                                    width: "100%",
+                                    height: "auto",
+                                    borderRadius: 8,
+                                    marginTop: 6,
+                                  }}
+                                />
+                              )}
 
                               {isMineReply && (
                                 <button
@@ -353,20 +624,6 @@ export default function PostCard({ post, onChange }) {
                         })}
                       </div>
                     )}
-
-                    {/* Reply button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReplyOpenForId(
-                          replyOpenForId === c._id ? null : c._id
-                        );
-                        setReplyText("");
-                      }}
-                      style={{ marginTop: 6, fontSize: 12 }}
-                    >
-                      Reply
-                    </button>
 
                     {/* Reply form */}
                     {replyOpenForId === c._id && (
@@ -391,18 +648,24 @@ export default function PostCard({ post, onChange }) {
                         >
                           Send
                         </button>
-                      </div>
-                    )}
 
-                    {isMine && (
-                      <button
-                        type="button"
-                        onClick={() => deleteComment(c._id)}
-                        style={{ marginTop: 4, fontSize: 12, color: "crimson" }}
-                        disabled={loading}
-                      >
-                        Delete
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            setReplyImageFile(e.target.files?.[0] || null)
+                          }
+                        />
+
+                        {replyImageFile && (
+                          <button
+                            type="button"
+                            onClick={() => setReplyImageFile(null)}
+                          >
+                            Remove image
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 );
@@ -414,67 +677,94 @@ export default function PostCard({ post, onChange }) {
                 </div>
               )}
             </div>
-
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <input
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Write a comment..."
-                style={{ flex: 1 }}
-              />
-              <button type="button" onClick={submitComment} disabled={loading}>
-                Send
-              </button>
-            </div>
           </div>
         </>
       ) : (
-        <textarea
-          rows={4}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          style={{ width: "100%" }}
-        />
+        <div style={{ display: "grid", gap: 8 }}>
+          <textarea
+            rows={4}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            style={{ width: "100%" }}
+          />
+
+          {/* CURRENT IMAGE */}
+          {post.imageUrl && !removeImage && (
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Current image</div>
+              <Image
+                src={post.imageUrl}
+                alt=""
+                width={800}
+                height={450}
+                style={{ width: "100%", height: "auto", borderRadius: 10 }}
+              />
+              <button
+                type="button"
+                onClick={() => setRemoveImage(true)}
+                disabled={loading}
+              >
+                Remove image
+              </button>
+            </div>
+          )}
+
+          {removeImage && (
+            <div style={{ fontSize: 12, color: "crimson" }}>
+              Image will be removed
+            </div>
+          )}
+
+          <label>
+            New image
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                setNewImageFile(e.target.files?.[0] || null);
+                setRemoveImage(false);
+              }}
+            />
+          </label>
+
+          {/* CURRENT VIDEO */}
+          {post.videoUrl && !removeVideo && (
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Current video</div>
+              <video
+                src={post.videoUrl}
+                controls
+                style={{ width: "100%", borderRadius: 10 }}
+              />
+              <button
+                type="button"
+                onClick={() => setRemoveVideo(true)}
+                disabled={loading}
+              >
+                Remove video
+              </button>
+            </div>
+          )}
+
+          {removeVideo && (
+            <div style={{ fontSize: 12, color: "crimson" }}>
+              Video will be removed
+            </div>
+          )}
+
+          <label>
+            New video
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) => {
+                setNewVideoFile(e.target.files?.[0] || null);
+                setRemoveVideo(false);
+              }}
+            />
+          </label>
+        </div>
       )}
-
-      <div style={{ display: "flex", gap: 8 }}>
-        {!isEditing ? (
-          <button
-            type="button"
-            onClick={() => {
-              setIsEditing(true);
-              setNewImageFile(null);
-              setNewVideoFile(null);
-              setRemoveImage(false);
-              setRemoveVideo(false);
-            }}
-            disabled={loading}
-          >
-            Edit
-          </button>
-        ) : (
-          <>
-            <button type="button" onClick={save} disabled={loading}>
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-          </>
-        )}
-
-        <button type="button" onClick={del} disabled={loading}>
-          Delete
-        </button>
-
-        <button type="button" onClick={toggleLike} disabled={loading}>
-          {likedByMe ? "Unlike" : "Like"} ({likesCount})
-        </button>
-      </div>
     </div>
   );
 }
