@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 function getClientId() {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") return null; // проверка что мы в браузере
 
   let id = localStorage.getItem("clientId");
   if (!id) {
@@ -150,6 +150,42 @@ export default function PostCard({ post, onChange }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  function startEdit() {
+    // запоминаем старое (чтобы Cancel мог вернуть)
+    setOriginalPost({
+      content: post.content,
+      imageUrl: post.imageUrl,
+      videoUrl: post.videoUrl,
+    });
+
+    // ставим текст в textarea
+    setText(post.content || "");
+
+    // сбрасываем “новые файлы/удаление”
+    setNewImageFile(null);
+    setNewVideoFile(null);
+    setRemoveImage(false);
+    setRemoveVideo(false);
+
+    setIsEditing(true);
+  }
+
+  function cancelEdit() {
+    // вернуть текст как был
+    if (originalPost) {
+      setText(originalPost.content || "");
+    }
+
+    // вернуть “состояния загрузок/удаления” в ноль
+    setNewImageFile(null);
+    setNewVideoFile(null);
+    setRemoveImage(false);
+    setRemoveVideo(false);
+
+    setIsEditing(false);
+    setOriginalPost(null);
   }
 
   async function submitComment(e) {
@@ -334,64 +370,19 @@ export default function PostCard({ post, onChange }) {
             />
           )}
 
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            {!isEditing ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setOriginalPost({
-                    content: post.content,
-                    imageUrl: post.imageUrl,
-                    videoUrl: post.videoUrl,
-                  });
-
-                  setText(post.content);
-                  setIsEditing(true);
-
-                  setNewImageFile(null);
-                  setNewVideoFile(null);
-                  setRemoveImage(false);
-                  setRemoveVideo(false);
-                }}
-                disabled={loading}
-              >
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <button type="button" onClick={startEdit} disabled={loading}>
                 Edit
               </button>
-            ) : (
-              <>
-                <button type="button" onClick={save} disabled={loading}>
-                  Save changes
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (originalPost) {
-                      setText(originalPost.content);
-                      setRemoveImage(false);
-                      setRemoveVideo(false);
-                      setNewImageFile(null);
-                      setNewVideoFile(null);
-                    }
+              <button type="button" onClick={del} disabled={loading}>
+                Delete
+              </button>
 
-                    setIsEditing(false);
-                    setOriginalPost(null);
-                    disabled = { loading };
-                  }}
-                >
-                  Cancel
-                </button>
-              </>
-            )}
-
-            <button type="button" onClick={del} disabled={loading}>
-              Delete
-            </button>
-
-            <button type="button" onClick={toggleLike} disabled={loading}>
-              {likedByMe ? "Unlike" : "Like"} ({likesCount})
-            </button>
-          </div>
+              <button type="button" onClick={toggleLike} disabled={loading}>
+                {likedByMe ? "Unlike" : "Like"} ({likesCount})
+              </button>
+            </div>
 
           <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
             <div style={{ display: "flex", gap: 8 }}>
