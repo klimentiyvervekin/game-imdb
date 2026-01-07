@@ -7,10 +7,74 @@ const PostSchema = new mongoose.Schema(
       ref: "Game",
       required: true,
     },
-    content: { type: String, required: true },
-    imageUrl: { type: String },
+
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    imageUrl: {
+      type: String,
+      default: "",
+    },
+
+    videoUrl: {
+      type: String,
+      default: "",
+    },
+
+    authorId: {
+      type: String,
+      required: true,
+    },
+
+    likedBy: {
+      type: [String],
+      default: [],
+    },
+
+    comments: {
+      type: [
+        {
+          _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+          authorId: { type: String, required: true },
+          text: { type: String, required: true, trim: true },
+          imageUrl: { type: String, default: "" },
+          createdAt: { type: Date, default: Date.now },
+
+          likedBy: { type: [String], default: [] },
+
+          replies: {
+            type: [
+              {
+                _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+                authorId: { type: String, required: true },
+                text: { type: String, required: true, trim: true },
+                imageUrl: { type: String, default: "" },
+                replyToId: {
+                  type: mongoose.Schema.Types.ObjectId,
+                  default: null,
+                },
+                createdAt: { type: Date, default: Date.now },
+
+                likedBy: { type: [String], default: [] },
+              },
+            ],
+            default: [],
+          },
+        },
+      ],
+      default: [],
+    },
+
+    type: {
+      type: String,
+      enum: ["text"],
+      default: "text",
+    },
   },
-  { timestamps: true } // create and update dates
+  { timestamps: true }
 );
 
 export default mongoose.models.Post || mongoose.model("Post", PostSchema);
