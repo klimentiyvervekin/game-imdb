@@ -43,6 +43,8 @@ const PostSchema = new mongoose.Schema(
           imageUrl: { type: String, default: "" },
           createdAt: { type: Date, default: Date.now },
 
+          likedBy: { type: [String], default: [] },
+
           replies: {
             type: [
               {
@@ -55,6 +57,8 @@ const PostSchema = new mongoose.Schema(
                   default: null,
                 },
                 createdAt: { type: Date, default: Date.now },
+
+                likedBy: { type: [String], default: [] },
               },
             ],
             default: [],

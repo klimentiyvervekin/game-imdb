@@ -5,6 +5,9 @@ import Link from "next/link";
 import styled from "styled-components";
 import ReviewSection from "../../components/ReviewSection";
 import PostSection from "@/components/PostSection";
+import { isFollowingGame, toggleFollowGame } from "@/lib/following";
+import { useEffect } from "react";
+import { useState } from "react";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -17,6 +20,13 @@ export default function GamePage() {
     error,
     isLoading,
   } = useSWR(slug ? `/api/games/${slug}` : null, fetcher);
+
+  const [followedGame, setFollowedGame] = useState(false);
+
+  useEffect(() => {
+    if (!game?._id) return;
+    setFollowedGame(isFollowingGame(game._id));
+  }, [game?._id]);
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Failed to load data</p>;
@@ -47,6 +57,18 @@ export default function GamePage() {
         )}
 
         <Title>{game.title}</Title>
+
+        <div style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={() => {
+              toggleFollowGame(game._id);
+              setFollowedGame(isFollowingGame(game._id));
+            }}
+          >
+            {followedGame ? "Unfollow game" : "Follow game"}
+          </button>
+        </div>
 
         <Meta>
           <li>
