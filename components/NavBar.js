@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 function getClientId() {
   if (typeof window === "undefined") return null;
@@ -13,6 +14,8 @@ function getClientId() {
 }
 
 export default function NavBar() {
+  const { data: session } = useSession();
+
   const [clientId, setClientId] = useState(null);
 
   useEffect(() => {
@@ -43,6 +46,23 @@ export default function NavBar() {
 
       <Link href="/bookmarks">Following</Link>
       <Link href="/likes">Likes</Link>
+
+      <span style={{ flex: 1 }} />
+
+      {session?.user ? (
+        <>
+          <span style={{ fontSize: 12, opacity: 0.7 }}>
+            {session.user.email}
+          </span>
+          <button type="button" onClick={() => signOut()}>
+            Logout
+          </button>
+        </>
+      ) : (
+        <button type="button" onClick={() => signIn("google")}>
+          Login with Google
+        </button>
+      )}
     </div>
   );
 }
