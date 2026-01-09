@@ -1,5 +1,6 @@
 import { useState } from "react";
 import useSWR from "swr";
+import { useSession } from "next-auth/react";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -16,6 +17,8 @@ function getClientId() {
 
   return id;
 }
+
+const { data: session } = useSession();
 
 //IMAGE AND VIDEO UPLOAD
 // file -> base64 -> /api/upload -> url
@@ -56,6 +59,8 @@ export default function CreatePost({ onCreated }) {
     e.preventDefault();
     setErr("");
 
+    if (!myUserId) return setErr("Login required");
+
     const trimmed = content.trim();
     if (!gameId) return setErr("Pick a game");
     if (!trimmed) return setErr("Write something");
@@ -83,7 +88,7 @@ export default function CreatePost({ onCreated }) {
         body: JSON.stringify({
           gameId,
           content: trimmed,
-          authorId,
+          authorId: myUserId,
           imageUrl,
           videoUrl,
         }),

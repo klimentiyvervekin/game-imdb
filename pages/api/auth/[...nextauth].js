@@ -4,7 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { dbConnect } from "../../../db/connect";
 import User from "../../../db/models/User";
 
-export default NextAuth({
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -55,4 +55,6 @@ export default NextAuth({
       return session;
     },
   },
-});
+};
+
+export default NextAuth(authOptions);

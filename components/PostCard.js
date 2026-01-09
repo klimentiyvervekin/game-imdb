@@ -1,17 +1,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
-function getClientId() {
-  if (typeof window === "undefined") return null;
-
-  let id = localStorage.getItem("clientId");
-  if (!id) {
-    id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem("clientId", id);
-  }
-  return id;
-}
+const isMine = c.authorId === myUserId;
+const isMineReply = r.authorId === myUserId;
 
 async function uploadToCloudinary(file, kind) {
   const base64 = await new Promise((resolve, reject) => {
@@ -33,6 +26,10 @@ async function uploadToCloudinary(file, kind) {
 }
 
 export default function PostCard({ post, onChange }) {
+
+  const { data: session } = useSession();
+  const myUserId = session?.user?.dbUserId || null;
+
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(post.content || "");
   const [loading, setLoading] = useState(false);

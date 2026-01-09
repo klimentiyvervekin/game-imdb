@@ -483,7 +483,6 @@ export default function ReviewSection({ gameId }) {
                               }
                             />
                             <label>
-
                               {/* edit spoilers update checkbox */}
                               <input
                                 type="checkbox"
