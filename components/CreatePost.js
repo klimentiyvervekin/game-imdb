@@ -41,11 +41,9 @@ export default function CreatePost({ onCreated }) {
     e.preventDefault();
     setErr("");
 
-    // ❗️ если не залогинен — не даём отправить
+    // если не залогинен — не даём отправить
     if (!session?.user?.dbUserId) {
-      return setErr(
-        "Пожалуйста, зарегистрируйтесь или войдите, чтобы писать посты"
-      );
+      return setErr("Please log in or sign in to write a posts.");
     }
 
     if (!gameId) return setErr("Pick a game");

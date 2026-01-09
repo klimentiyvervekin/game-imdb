@@ -1,10 +1,8 @@
+// components/PostCard.js
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
-
-const isMine = c.authorId === myUserId;
-const isMineReply = r.authorId === myUserId;
 
 async function uploadToCloudinary(file, kind) {
   const base64 = await new Promise((resolve, reject) => {
@@ -26,7 +24,6 @@ async function uploadToCloudinary(file, kind) {
 }
 
 export default function PostCard({ post, onChange }) {
-
   const { data: session } = useSession();
   const myUserId = session?.user?.dbUserId || null;
 
@@ -38,7 +35,7 @@ export default function PostCard({ post, onChange }) {
   const [commentText, setCommentText] = useState("");
   const [commentImageFile, setCommentImageFile] = useState(null);
 
-  // reply form (one open per post, under one comment at a time)
+  // reply form
   const [replyOpenForId, setReplyOpenForId] = useState(null); // commentId
   const [replyText, setReplyText] = useState("");
   const [replyImageFile, setReplyImageFile] = useState(null);
@@ -55,14 +52,26 @@ export default function PostCard({ post, onChange }) {
 
   const game = post.gameId;
 
-  const clientId = getClientId();
+  const isMinePost = myUserId && String(post.authorId) === String(myUserId);
+
   const likesCount = Array.isArray(post.likedBy) ? post.likedBy.length : 0;
   const likedByMe =
-    clientId && Array.isArray(post.likedBy) && post.likedBy.includes(clientId);
+    myUserId &&
+    Array.isArray(post.likedBy) &&
+    post.likedBy.includes(String(myUserId));
+
+  function needLogin() {
+    alert(
+      "Пожалуйста, зарегистрируйтесь или войдите, чтобы писать посты, лайкать и комментировать"
+    );
+  }
 
   async function del(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
+
+    if (!myUserId) return needLogin();
+    if (!isMinePost) return alert("Not allowed");
 
     const ok = confirm("Delete this post?");
     if (!ok) return;
@@ -70,7 +79,8 @@ export default function PostCard({ post, onChange }) {
     setLoading(true);
     try {
       const res = await fetch(`/api/posts/${post._id}`, { method: "DELETE" });
-      if (!res.ok) return alert("Failed to delete post");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to delete post");
       onChange?.();
     } finally {
       setLoading(false);
@@ -81,16 +91,13 @@ export default function PostCard({ post, onChange }) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
-    if (!clientId) return alert("No clientId");
+    if (!myUserId) return needLogin();
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/posts/${post._id}/like`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId }),
-      });
-      if (!res.ok) return alert("Failed to like");
+      const res = await fetch(`/api/posts/${post._id}/like`, { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to like");
       onChange?.();
     } finally {
       setLoading(false);
@@ -98,6 +105,9 @@ export default function PostCard({ post, onChange }) {
   }
 
   function startEdit() {
+    if (!myUserId) return needLogin();
+    if (!isMinePost) return alert("Not allowed");
+
     setOriginalPost({
       content: post.content || "",
       imageUrl: post.imageUrl || "",
@@ -115,14 +125,11 @@ export default function PostCard({ post, onChange }) {
   }
 
   function cancelEdit() {
-    if (originalPost) {
-      setText(originalPost.content || "");
-    }
+    if (originalPost) setText(originalPost.content || "");
     setNewImageFile(null);
     setNewVideoFile(null);
     setRemoveImage(false);
     setRemoveVideo(false);
-
     setIsEditing(false);
     setOriginalPost(null);
   }
@@ -130,6 +137,9 @@ export default function PostCard({ post, onChange }) {
   async function save(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
+
+    if (!myUserId) return needLogin();
+    if (!isMinePost) return alert("Not allowed");
 
     const trimmed = text.trim();
     if (!trimmed) return alert("Post content cannot be empty");
@@ -163,7 +173,8 @@ export default function PostCard({ post, onChange }) {
         }),
       });
 
-      if (!res.ok) return alert("Failed to update post");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to update post");
 
       setIsEditing(false);
       setOriginalPost(null);
@@ -179,8 +190,7 @@ export default function PostCard({ post, onChange }) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
-    const clientId = getClientId();
-    if (!clientId) return alert("No clientId");
+    if (!myUserId) return needLogin();
 
     const trimmed = commentText.trim();
     if (!trimmed) return;
@@ -195,10 +205,11 @@ export default function PostCard({ post, onChange }) {
       const res = await fetch(`/api/posts/${post._id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, text: trimmed, imageUrl }),
+        body: JSON.stringify({ text: trimmed, imageUrl }),
       });
 
-      if (!res.ok) return alert("Failed to add comment");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to add comment");
 
       setCommentText("");
       setCommentImageFile(null);
@@ -211,8 +222,7 @@ export default function PostCard({ post, onChange }) {
   }
 
   async function deleteComment(commentId) {
-    const clientId = getClientId();
-    if (!clientId) return alert("No clientId");
+    if (!myUserId) return needLogin();
 
     const ok = confirm("Delete this comment?");
     if (!ok) return;
@@ -221,11 +231,11 @@ export default function PostCard({ post, onChange }) {
     try {
       const res = await fetch(`/api/posts/${post._id}/comments/${commentId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId }),
       });
 
-      if (!res.ok) return alert("Failed to delete comment");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to delete comment");
+
       onChange?.();
     } catch (err) {
       alert(err.message);
@@ -235,8 +245,7 @@ export default function PostCard({ post, onChange }) {
   }
 
   async function submitReply(commentId) {
-    const clientId = getClientId();
-    if (!clientId) return alert("No clientId");
+    if (!myUserId) return needLogin();
 
     const trimmed = replyText.trim();
     if (!trimmed) return;
@@ -254,7 +263,6 @@ export default function PostCard({ post, onChange }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            clientId,
             text: trimmed,
             imageUrl,
             replyToId: replyTo?.replyToId || null,
@@ -262,7 +270,8 @@ export default function PostCard({ post, onChange }) {
         }
       );
 
-      if (!res.ok) return alert("Failed to reply");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to reply");
 
       setReplyText("");
       setReplyImageFile(null);
@@ -277,8 +286,7 @@ export default function PostCard({ post, onChange }) {
   }
 
   async function deleteReply(commentId, replyId) {
-    const clientId = getClientId();
-    if (!clientId) return alert("No clientId");
+    if (!myUserId) return needLogin();
 
     const ok = confirm("Delete this reply?");
     if (!ok) return;
@@ -287,14 +295,12 @@ export default function PostCard({ post, onChange }) {
     try {
       const res = await fetch(
         `/api/posts/${post._id}/comments/${commentId}/replies/${replyId}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId }),
-        }
+        { method: "DELETE" }
       );
 
-      if (!res.ok) return alert("Failed to delete reply");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to delete reply");
+
       onChange?.();
     } catch (err) {
       alert(err.message);
@@ -303,46 +309,38 @@ export default function PostCard({ post, onChange }) {
     }
   }
 
-  // ✅ LIKE COMMENT (toggle)
   async function toggleCommentLike(commentId) {
-    const clientId = getClientId();
-    if (!clientId) return alert("No clientId");
+    if (!myUserId) return needLogin();
 
     setLoading(true);
     try {
       const res = await fetch(
         `/api/posts/${post._id}/comments/${commentId}/like`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId }),
-        }
+        { method: "POST" }
       );
 
-      if (!res.ok) return alert("Failed to like comment");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to like comment");
+
       onChange?.();
     } finally {
       setLoading(false);
     }
   }
 
-  // ✅ LIKE REPLY (toggle)
   async function toggleReplyLike(commentId, replyId) {
-    const clientId = getClientId();
-    if (!clientId) return alert("No clientId");
+    if (!myUserId) return needLogin();
 
     setLoading(true);
     try {
       const res = await fetch(
         `/api/posts/${post._id}/comments/${commentId}/replies/${replyId}/like`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId }),
-        }
+        { method: "POST" }
       );
 
-      if (!res.ok) return alert("Failed to like reply");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(json?.error || "Failed to like reply");
+
       onChange?.();
     } finally {
       setLoading(false);
@@ -365,17 +363,19 @@ export default function PostCard({ post, onChange }) {
       {!isEditing && (
         <>
           <small style={{ opacity: 0.6 }}>
-            {new Date(post.createdAt).toLocaleString()}
+            {post.createdAt ? new Date(post.createdAt).toLocaleString() : ""}
           </small>
 
-          <Link
-            href={`/users/${post.authorId}`}
-            style={{ fontSize: 12, opacity: 0.7 }}
-          >
-            Author profile
-          </Link>
+          <div style={{ marginTop: 6 }}>
+            <Link
+              href={`/users/${post.authorId}`}
+              style={{ fontSize: 12, opacity: 0.7 }}
+            >
+              Author profile
+            </Link>
+          </div>
 
-          <p style={{ marginTop: 0 }}>{post.content}</p>
+          <p style={{ marginTop: 8 }}>{post.content}</p>
 
           {post.imageUrl && (
             <Image
@@ -397,13 +397,17 @@ export default function PostCard({ post, onChange }) {
 
           {/* POST ACTIONS */}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button type="button" onClick={startEdit} disabled={loading}>
-              Edit
-            </button>
+            {isMinePost && (
+              <>
+                <button type="button" onClick={startEdit} disabled={loading}>
+                  Edit
+                </button>
 
-            <button type="button" onClick={del} disabled={loading}>
-              Delete
-            </button>
+                <button type="button" onClick={del} disabled={loading}>
+                  Delete
+                </button>
+              </>
+            )}
 
             <button type="button" onClick={toggleLike} disabled={loading}>
               {likedByMe ? "Unlike" : "Like"} ({likesCount})
@@ -450,14 +454,17 @@ export default function PostCard({ post, onChange }) {
 
             <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
               {(post.comments || []).map((c) => {
-                const myId = getClientId();
-                const isMine = c.authorId === myId;
+                const isMineComment =
+                  myUserId && String(c.authorId) === String(myUserId);
 
                 const commentLikes = Array.isArray(c.likedBy)
                   ? c.likedBy.length
                   : 0;
+
                 const commentLikedByMe =
-                  myId && Array.isArray(c.likedBy) && c.likedBy.includes(myId);
+                  myUserId &&
+                  Array.isArray(c.likedBy) &&
+                  c.likedBy.includes(String(myUserId));
 
                 return (
                   <div
@@ -469,7 +476,7 @@ export default function PostCard({ post, onChange }) {
                     }}
                   >
                     <div style={{ fontSize: 12, opacity: 0.7 }}>
-                      {new Date(c.createdAt).toLocaleString()}
+                      {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
                     </div>
 
                     <Link href={`/users/${c.authorId}`}>user</Link>
@@ -509,7 +516,6 @@ export default function PostCard({ post, onChange }) {
                         Reply
                       </button>
 
-                      {/* ✅ COMMENT LIKE */}
                       <button
                         type="button"
                         onClick={() => toggleCommentLike(c._id)}
@@ -519,7 +525,7 @@ export default function PostCard({ post, onChange }) {
                         {commentLikedByMe ? "Unlike" : "Like"} ({commentLikes})
                       </button>
 
-                      {isMine && (
+                      {isMineComment && (
                         <button
                           type="button"
                           onClick={() => deleteComment(c._id)}
@@ -542,16 +548,17 @@ export default function PostCard({ post, onChange }) {
                         }}
                       >
                         {c.replies.map((r) => {
-                          const myId2 = getClientId();
-                          const isMineReply = r.authorId === myId2;
+                          const isMineReply =
+                            myUserId && String(r.authorId) === String(myUserId);
 
                           const replyLikes = Array.isArray(r.likedBy)
                             ? r.likedBy.length
                             : 0;
+
                           const replyLikedByMe =
-                            myId2 &&
+                            myUserId &&
                             Array.isArray(r.likedBy) &&
-                            r.likedBy.includes(myId2);
+                            r.likedBy.includes(String(myUserId));
 
                           return (
                             <div
@@ -563,7 +570,9 @@ export default function PostCard({ post, onChange }) {
                               }}
                             >
                               <div style={{ fontSize: 12, opacity: 0.7 }}>
-                                {new Date(r.createdAt).toLocaleString()}
+                                {r.createdAt
+                                  ? new Date(r.createdAt).toLocaleString()
+                                  : ""}
                               </div>
 
                               {r.replyToId && (
@@ -614,7 +623,6 @@ export default function PostCard({ post, onChange }) {
                                   Reply
                                 </button>
 
-                                {/* ✅ REPLY LIKE */}
                                 <button
                                   type="button"
                                   onClick={() => toggleReplyLike(c._id, r._id)}
@@ -702,9 +710,7 @@ export default function PostCard({ post, onChange }) {
               })}
 
               {(post.comments || []).length === 0 && (
-                <div style={{ fontSize: 13, opacity: 0.7 }}>
-                  No comments yet
-                </div>
+                <div style={{ fontSize: 13, opacity: 0.7 }}>No comments yet</div>
               )}
             </div>
           </div>

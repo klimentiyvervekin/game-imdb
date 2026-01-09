@@ -1,43 +1,50 @@
+// pages/api/users/me.js
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
+
 import { dbConnect } from "../../../db/connect";
 import User from "../../../db/models/User";
 
 export default async function handler(req, res) {
-  await dbConnect();
+  try {
+    await dbConnect();
 
-  // GET /api/users/me?clientId=...
-  if (req.method === "GET") {
-    const { clientId } = req.query;
-    if (!clientId)
-      return res.status(400).json({ error: "clientId is required" });
+    // только залогиненный
+    const session = await getServerSession(req, res, authOptions);
+    const userId = session?.user?.dbUserId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const user = await User.findOne({ clientId });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    // GET /api/users/me
+    if (req.method === "GET") {
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      return res.status(200).json(user);
+    }
 
-    return res.status(200).json(user);
-  }
+    // POST /api/users/me
+    // просто "убедиться что я есть" (на всякий случай)
+    if (req.method === "POST") {
+      const email = session?.user?.email || "";
+      const name = session?.user?.name || "User";
 
-  // POST /api/users/me  { clientId }
-  // создаёт пользователя, если его нет
-  if (req.method === "POST") {
-    const { clientId } = req.body;
-    if (!clientId)
-      return res.status(400).json({ error: "clientId is required" });
-
-    const user = await User.findOneAndUpdate(
-      { clientId },
-      {
-        $setOnInsert: {
-          clientId,
-          username: "Guest",
-          avatarUrl: "",
-          bio: "",
+      const user = await User.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            // не перетираем пустыми значениями
+            ...(email ? { email } : {}),
+            ...(name ? { name } : {}),
+          },
         },
-      },
-      { new: true, upsert: true }
-    );
+        { new: true, upsert: true }
+      );
 
-    return res.status(200).json(user);
+      return res.status(200).json(user);
+    }
+
+    return res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    console.error("USERS ME ERROR:", error);
+    return res.status(500).json({ error: error.message, name: error.name });
   }
-
-  return res.status(405).json({ error: "Method not allowed" });
 }

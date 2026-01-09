@@ -1,34 +1,23 @@
+// components/NavBar.js
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 
-function getClientId() {
-  if (typeof window === "undefined") return null;
-
-  let id = localStorage.getItem("clientId");
-  if (!id) {
-    id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem("clientId", id);
-  }
-  return id;
-}
-
 export default function NavBar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
-  const [clientId, setClientId] = useState(null);
-
+  // на всякий случай "убеждаемся", что юзер есть в Mongo
+  // (теперь без clientId, сервер сам берёт dbUserId из session)
   useEffect(() => {
-    const id = getClientId();
-    setClientId(id);
+    if (status !== "authenticated") return;
 
-    // создаём юзера если его нет
     fetch("/api/users/me", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientId: id }),
     }).catch(() => {});
-  }, []);
+  }, [status]);
+
+  const myId = session?.user?.dbUserId || null;
 
   return (
     <div
@@ -41,8 +30,8 @@ export default function NavBar() {
     >
       <Link href="/">Home</Link>
 
-      {/* profil page = /users/<clientId> */}
-      {clientId ? <Link href={`/users/${clientId}`}>Profile</Link> : <span>Profile</span>}
+      {/* профиль есть только у залогиненного */}
+      {myId ? <Link href={`/users/${myId}`}>Profile</Link> : <span>Profile</span>}
 
       <Link href="/bookmarks">Following</Link>
       <Link href="/likes">Likes</Link>
