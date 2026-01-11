@@ -1,43 +1,75 @@
+// pages/api/users/me.js
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
+
 import { dbConnect } from "../../../db/connect";
 import User from "../../../db/models/User";
 
 export default async function handler(req, res) {
-  await dbConnect();
+  try {
+    await dbConnect();
 
-  // GET /api/users/me?clientId=...
-  if (req.method === "GET") {
-    const { clientId } = req.query;
-    if (!clientId)
-      return res.status(400).json({ error: "clientId is required" });
+    const session = await getServerSession(req, res, authOptions);
+    const userId = session?.user?.dbUserId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const user = await User.findOne({ clientId });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    // GET /api/users/me
+    if (req.method === "GET") {
+      const user = await User.findById(userId).lean();
+      if (!user) return res.status(404).json({ error: "User not found" });
 
-    return res.status(200).json(user);
-  }
+      // отдаём только безопасные поля (как публичный профиль)
+      return res.status(200).json({
+        _id: String(user._id),
+        name: user.name || "User",
+        avatarUrl: user.avatarUrl || "",
+        bio: user.bio || "",
+        email: user.email || "",
+      });
+    }
 
-  // POST /api/users/me  { clientId }
-  // создаёт пользователя, если его нет
-  if (req.method === "POST") {
-    const { clientId } = req.body;
-    if (!clientId)
-      return res.status(400).json({ error: "clientId is required" });
+    // POST /api/users/me
+    // "убедиться что я есть" — но БЕЗ upsert без email (иначе 500)
+    if (req.method === "POST") {
+      const email = String(session?.user?.email || "").trim();
+      const name = String(session?.user?.name || "User").trim();
 
-    const user = await User.findOneAndUpdate(
-      { clientId },
-      {
-        $setOnInsert: {
-          clientId,
-          username: "Guest",
-          avatarUrl: "",
-          bio: "",
+      // если вдруг session без email — не создаём (иначе UserSchema required email даст 500)
+      if (!email) {
+        return res.status(400).json({ error: "Session email is missing" });
+      }
+
+      // создаём/обновляем безопасно:
+      // - upsert разрешаем, но email кладём в $setOnInsert (обязательно для создания)
+      const user = await User.findOneAndUpdate(
+        { _id: userId },
+        {
+          $set: {
+            ...(name ? { name } : {}),
+          },
+          $setOnInsert: {
+            email, // обязателен при создании
+            name: name || "User",
+            avatarUrl: "",
+            bio: "",
+            provider: "google",
+          },
         },
-      },
-      { new: true, upsert: true }
-    );
+        { new: true, upsert: true }
+      ).lean();
 
-    return res.status(200).json(user);
+      return res.status(200).json({
+        _id: String(user._id),
+        name: user.name || "User",
+        avatarUrl: user.avatarUrl || "",
+        bio: user.bio || "",
+        email: user.email || "",
+      });
+    }
+
+    return res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    console.error("USERS ME ERROR:", error);
+    return res.status(500).json({ error: error.message, name: error.name });
   }
-
-  return res.status(405).json({ error: "Method not allowed" });
 }

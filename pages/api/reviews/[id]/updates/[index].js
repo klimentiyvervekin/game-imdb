@@ -1,7 +1,9 @@
+// pages/api/reviews/[id]/updates/[index].js
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../auth/[...nextauth]";
+
 import { dbConnect } from "../../../../../db/connect";
 import Review from "../../../../../db/models/Review";
-
-// backend delete updated review
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
@@ -9,21 +11,30 @@ export default async function handler(req, res) {
   const { id, index } = req.query;
   const updateIndex = Number(index);
 
-  // "isInteger" means "is this number an integer?" (integer = whole number)
   if (!Number.isInteger(updateIndex)) {
     return res.status(400).json({ error: "Invalid update index" });
   }
 
   try {
+    // DELETE/PATCH - только залогиненный
+    if (req.method !== "DELETE" && req.method !== "PATCH") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    const session = await getServerSession(req, res, authOptions);
+    const userId = session?.user?.dbUserId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
     await dbConnect();
 
     const review = await Review.findById(id);
-    if (!review) {
-      return res.status(404).json({ error: "Review not found" });
-    }
+    if (!review) return res.status(404).json({ error: "Review not found" });
 
     const upd = review.updates?.[updateIndex];
     if (!upd) return res.status(404).json({ error: "Update not found" });
+
+    const isMine = String(upd.authorId) === String(userId);
+    if (!isMine) return res.status(403).json({ error: "Not allowed" });
 
     if (req.method === "DELETE") {
       review.updates.splice(updateIndex, 1);
@@ -34,11 +45,7 @@ export default async function handler(req, res) {
 
     // PATCH: edit update within 15 minutes
     if (req.method === "PATCH") {
-      const { text, authorId, hasSpoilers } = req.body;
-
-      if (!authorId || upd.authorId !== authorId) {
-        return res.status(403).json({ error: "Not allowed" });
-      }
+      const { text, hasSpoilers } = req.body;
 
       const age = Date.now() - new Date(upd.createdAt).getTime();
       if (age > EDIT_WINDOW_MS) {
@@ -58,10 +65,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json(review);
     }
-
-    return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    console.error("DELETE UPDATE ERROR:", error);
+    console.error("UPDATE [index] ERROR:", error);
     return res.status(500).json({ error: error.message });
   }
 }

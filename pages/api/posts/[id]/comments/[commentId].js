@@ -1,9 +1,16 @@
-import { dbConnect } from "../../../../../db/connect";
-import Post from "../../../../../db/models/Post";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
+
+import { dbConnect } from "@/db/connect";
+import Post from "@/db/models/Post";
 
 export default async function handler(req, res) {
   try {
-    const { id, commentId } = req.query; // <-- ВАЖНО
+    const session = await getServerSession(req, res, authOptions);
+    const userId = session?.user?.dbUserId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id, commentId } = req.query;
 
     await dbConnect();
 
@@ -11,32 +18,26 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     }
 
-    const { clientId } = req.body;
-    if (!clientId) {
-      return res.status(400).json({ error: "clientId is required" });
-    }
-
     const post = await Post.findById(id);
     if (!post) return res.status(404).json({ error: "Post not found" });
 
-    // гарантируем массив
-    const comments = Array.isArray(post.comments) ? post.comments : [];
-
-    // найдем коммент
-    const comment = comments.find((c) => String(c._id) === String(commentId));
+    const comment = post.comments?.id(commentId);
     if (!comment) return res.status(404).json({ error: "Comment not found" });
 
     // проверка авторства
-    if (comment.authorId !== clientId) {
+    if (String(comment.authorId) !== String(userId)) {
       return res.status(403).json({ error: "Not allowed" });
     }
 
-    post.comments = comments.filter((c) => String(c._id) !== String(commentId));
+    // самое надёжное удаление сабдока
+    post.comments.pull(commentId);
+
     await post.save();
 
-    return res.status(200).json({ ok: true });
+    const populated = await Post.findById(id).populate("gameId", "title slug");
+    return res.status(200).json(populated);
   } catch (err) {
     console.error("DELETE COMMENT ERROR:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message || "Server error" });
   }
 }

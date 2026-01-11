@@ -1,3 +1,7 @@
+// pages/api/reviews/index.js
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
+
 import { dbConnect } from "../../../db/connect";
 import Review from "../../../db/models/Review";
 
@@ -5,7 +9,7 @@ export default async function handler(req, res) {
   try {
     await dbConnect();
 
-    // GET /api/reviews?gameId=<id>
+    // GET /api/reviews?gameId=<id>  (доступно всем)
     if (req.method === "GET") {
       const { gameId } = req.query;
 
@@ -17,13 +21,15 @@ export default async function handler(req, res) {
       return res.status(200).json(reviews);
     }
 
-    // POST /api/reviews
+    // POST /api/reviews  (только залогиненный)
     if (req.method === "POST") {
-      const { gameId, rating, text, authorId, hasSpoilers } = req.body;
+      const session = await getServerSession(req, res, authOptions);
+      const userId = session?.user?.dbUserId;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-      // basic validation
+      const { gameId, rating, text, hasSpoilers } = req.body;
+
       const trimmedText = (text || "").trim();
-
       if (!trimmedText) {
         return res.status(400).json({ error: "Review text cannot be empty" });
       }
@@ -43,16 +49,12 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "gameId is required" });
       }
 
-      if (!authorId) {
-        return res.status(400).json({ error: "authorId is required" });
-      }
-
       const created = await Review.create({
         gameId,
         rating: numericRating,
         text: trimmedText,
         user: "Anonymous", // MVP placeholder
-        authorId,
+        authorId: userId, // dbUserId из session
         hasSpoilers: Boolean(hasSpoilers),
       });
 

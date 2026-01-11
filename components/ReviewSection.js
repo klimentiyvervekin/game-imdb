@@ -1,6 +1,8 @@
+// components/ReviewSection.js
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import styled from "styled-components";
+import { useSession } from "next-auth/react";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
@@ -11,20 +13,10 @@ const fetcher = async (url) => {
   return json;
 };
 
-//---------helper--------//
-function getClientId() {
-  if (typeof window === "undefined") return "server";
-  const key = "clientId";
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-    localStorage.setItem(key, id);
-  }
-  return id;
-}
-//----------------------//
-
 export default function ReviewSection({ gameId }) {
+  const { data: session } = useSession();
+  const myUserId = session?.user?.dbUserId || null;
+
   const {
     data: reviews,
     error,
@@ -60,7 +52,6 @@ export default function ReviewSection({ gameId }) {
   const [editUpdateHasSpoilers, setEditUpdateHasSpoilers] = useState(false);
 
   //---------------current time (seconds)------------//
-  const clientId = useMemo(() => getClientId(), []);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -78,29 +69,33 @@ export default function ReviewSection({ gameId }) {
   }
   //-------------------------//
 
-  // "const stats = useMemo" means "count stats but only if reviews changed" (because of useMemo)
-  // "toFixed" do "9,33333" to "9,3"
   const stats = useMemo(() => {
     const list = reviews || [];
     const count = list.length;
 
-    // avg means here "middle score of all scores"
     const avg =
       count === 0
         ? 0
         : list.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / count;
+
     return { count, avg: Number(avg.toFixed(1)) };
   }, [reviews]);
-  // if score 0 then 0, if not then summarise all scores to become a middle score of a game
-  // reviews at the end means "only if reviews changed count a new average score"
+
+  function needLogin() {
+    alert(
+      "Пожалуйста, зарегистрируйтесь или войдите, чтобы писать ревью, лайкать и комментировать"
+    );
+  }
 
   //----------------edit review (update review too)----------------//
   async function saveReviewEdit(review) {
+    if (!myUserId) return needLogin();
+
     const res = await fetch(`/api/reviews/${review._id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        authorId: clientId,
+        // ✅ authorId больше не отправляем — сервер должен проверять по session
         text: editText,
         rating: editRating,
         hasSpoilers: editHasSpoilers,
@@ -118,11 +113,13 @@ export default function ReviewSection({ gameId }) {
   }
 
   async function saveUpdateEdit(reviewId, index) {
+    if (!myUserId) return needLogin();
+
     const res = await fetch(`/api/reviews/${reviewId}/updates/${index}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        authorId: clientId,
+        // ✅ authorId больше не отправляем — сервер должен проверять по session
         text: editUpdateText,
         hasSpoilers: editUpdateHasSpoilers,
       }),
@@ -141,6 +138,8 @@ export default function ReviewSection({ gameId }) {
 
   //-----Delete review-----//
   async function handleDelete(reviewId) {
+    if (!myUserId) return needLogin();
+
     const ok = confirm("Delete this review?");
     if (!ok) return;
 
@@ -157,6 +156,8 @@ export default function ReviewSection({ gameId }) {
 
   //-----Submit Update Review-----//
   async function submitUpdate(reviewId) {
+    if (!myUserId) return needLogin();
+
     setUpdateError("");
 
     try {
@@ -165,7 +166,7 @@ export default function ReviewSection({ gameId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: updateText,
-          authorId: clientId,
+          // ✅ authorId больше не отправляем — сервер должен брать из session
           hasSpoilers: updateHasSpoilers,
         }),
       });
@@ -188,6 +189,8 @@ export default function ReviewSection({ gameId }) {
 
   //-----Delete updated Review-----//
   async function handleDeleteUpdate(reviewId, updateIndex) {
+    if (!myUserId) return needLogin();
+
     const ok = confirm("Delete this update?");
     if (!ok) return;
 
@@ -204,7 +207,7 @@ export default function ReviewSection({ gameId }) {
         return;
       }
 
-      await mutate(); // update ui
+      await mutate();
     } catch (err) {
       alert(err.message || "Failed to delete update");
     }
@@ -212,19 +215,25 @@ export default function ReviewSection({ gameId }) {
 
   //------Vote Functions------//
   async function voteReview(reviewId, type) {
+    if (!myUserId) return needLogin();
+
     await fetch(`/api/reviews/${reviewId}/vote`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, voterId: clientId }),
+      body: JSON.stringify({ type }),
+      // ✅ voterId больше не отправляем — сервер должен брать из session
     });
     await mutate();
   }
 
   async function voteUpdate(reviewId, updateIndex, type) {
+    if (!myUserId) return needLogin();
+
     await fetch(`/api/reviews/${reviewId}/updates/${updateIndex}/vote`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, voterId: clientId }),
+      body: JSON.stringify({ type }),
+      // ✅ voterId больше не отправляем — сервер должен брать из session
     });
     await mutate();
   }
@@ -232,6 +241,8 @@ export default function ReviewSection({ gameId }) {
   //------Submit Review--------//
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!myUserId) return needLogin();
+
     setSubmitError("");
     setIsSubmitting(true);
 
@@ -243,7 +254,7 @@ export default function ReviewSection({ gameId }) {
           gameId,
           rating,
           text,
-          authorId: clientId,
+          // ✅ authorId больше не отправляем — сервер должен брать из session
           hasSpoilers,
         }),
       });
@@ -268,7 +279,6 @@ export default function ReviewSection({ gameId }) {
   }
 
   //---------------RETURN------------//
-
   return (
     <Wrap>
       <Header>
@@ -336,7 +346,8 @@ export default function ReviewSection({ gameId }) {
           const reviewAge = now - new Date(r.createdAt).getTime();
           const reviewLeft = EDIT_WINDOW_MS - reviewAge;
 
-          const canEditReview = r.authorId === clientId && reviewLeft > 0;
+          // ✅ проверяем владение по dbUserId из session
+          const canEditReview = myUserId && r.authorId === myUserId && reviewLeft > 0;
 
           return (
             <Card key={r._id}>
@@ -381,7 +392,6 @@ export default function ReviewSection({ gameId }) {
                     onChange={(e) => setEditText(e.target.value)}
                   />
 
-                  {/* edit spoilers checkbox */}
                   <label>
                     <input
                       type="checkbox"
@@ -438,8 +448,9 @@ export default function ReviewSection({ gameId }) {
 
                     const updateAge = now - new Date(u.createdAt).getTime();
                     const updateLeft = EDIT_WINDOW_MS - updateAge;
+
                     const canEditUpdate =
-                      u.authorId === clientId && updateLeft > 0;
+                      myUserId && u.authorId === myUserId && updateLeft > 0;
 
                     return (
                       <UpdateItem key={u.createdAt + i}>
@@ -483,8 +494,6 @@ export default function ReviewSection({ gameId }) {
                               }
                             />
                             <label>
-
-                              {/* edit spoilers update checkbox */}
                               <input
                                 type="checkbox"
                                 checked={editUpdateHasSpoilers}
@@ -545,9 +554,10 @@ export default function ReviewSection({ gameId }) {
               <button
                 type="button"
                 onClick={() => {
+                  if (!myUserId) return needLogin();
                   setUpdateError("");
                   setUpdateText("");
-                  setOpenUpdateForId(openUpdateForId === r._id ? null : r._id); // toggle logic for form
+                  setOpenUpdateForId(openUpdateForId === r._id ? null : r._id);
                 }}
               >
                 Add update
@@ -561,7 +571,7 @@ export default function ReviewSection({ gameId }) {
                     onChange={(e) => setUpdateText(e.target.value)}
                     placeholder="Write update..."
                   />
-                  {/* add update spoilers */}
+
                   <label>
                     <input
                       type="checkbox"
@@ -717,6 +727,7 @@ const SpoilerTag = styled.span`
   border-radius: 999px;
   font-size: 12px;
 `;
+
 const Hint = styled.p`
   margin: 6px 0 0;
   font-size: 12px;

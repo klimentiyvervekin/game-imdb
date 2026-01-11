@@ -1,21 +1,15 @@
-import { useState, useMemo } from "react";
+// components/PostSection.js
+import { useState } from "react";
 import useSWR from "swr";
 import PostList from "./PostList";
+import { useSession } from "next-auth/react";
 
-const fetcher = (url) => fetch(url).then(r => r.json());
-
-function getClientId() {
-  if (typeof window === "undefined") return "server";
-  let id = localStorage.getItem("clientId");
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem("clientId", id);
-  }
-  return id;
-}
+const fetcher = (url) => fetch(url).then((r) => r.json());
 
 export default function PostSection({ gameId }) {
-  const clientId = useMemo(getClientId, []);
+  const { data: session } = useSession();
+  const myUserId = session?.user?.dbUserId || null;
+
   const { data: posts, mutate } = useSWR(
     gameId ? `/api/posts?gameId=${gameId}` : null,
     fetcher
@@ -24,13 +18,20 @@ export default function PostSection({ gameId }) {
   const [text, setText] = useState("");
 
   async function submitPost() {
+    if (!myUserId) {
+      alert(
+        "Please log in or sign in to write posts, like and comment."
+      );
+      return;
+    }
+
     await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         gameId,
         content: text,
-        authorId: clientId,
+        // authorId больше не отправляем - сервер берёт userId из session
       }),
     });
 

@@ -1,12 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+
   compiler: {
     styledComponents: true,
   },
-  reactStrictMode: true,
 
   images: {
-    domains: ["media.rawg.io", "screenshots.rawg.io", "res.cloudinary.com"],
+    domains: [
+      // RAWG
+      "media.rawg.io",
+      "screenshots.rawg.io",
+
+      // Cloudinary (посты, видео превью)
+      "res.cloudinary.com",
+
+      // Google avatars (next-auth)
+      "lh3.googleusercontent.com",
+    ],
   },
 
   webpack(config) {
@@ -21,6 +32,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-
-// Next/Image по умолчанию разрешает только определённые домены
-// Cloudinary — внешний домен, поэтому его добавляют в next.config.js

@@ -1,8 +1,15 @@
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../../../auth/[...nextauth]";
+
 import { dbConnect } from "../../../../../../../db/connect";
 import Post from "../../../../../../../db/models/Post";
 
 export default async function handler(req, res) {
   try {
+    const session = await getServerSession(req, res, authOptions);
+    const userId = session?.user?.dbUserId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
     const { id, commentId, replyId } = req.query;
 
     await dbConnect();
@@ -10,10 +17,6 @@ export default async function handler(req, res) {
     if (req.method !== "DELETE") {
       return res.status(405).json({ error: "Method not allowed" });
     }
-
-    const { clientId } = req.body;
-    if (!clientId)
-      return res.status(400).json({ error: "clientId is required" });
 
     const post = await Post.findById(id);
     if (!post) return res.status(404).json({ error: "Post not found" });
@@ -28,11 +31,13 @@ export default async function handler(req, res) {
     const target = replies.find((r) => String(r._id) === String(replyId));
     if (!target) return res.status(404).json({ error: "Reply not found" });
 
-    if (target.authorId !== clientId) {
+    // проверка авторства по dbUserId
+    if (String(target.authorId) !== String(userId)) {
       return res.status(403).json({ error: "Not allowed" });
     }
 
-    const toDelete = new Set([String(replyId)]); // собираем все реплайАйди которые нужно удалить
+    // каскадное удаление детей (replyToId -> String)
+    const toDelete = new Set([String(replyId)]);
 
     let changed = true;
     while (changed) {
@@ -41,19 +46,13 @@ export default async function handler(req, res) {
       for (const r of replies) {
         const parentId = r.replyToId ? String(r.replyToId) : null;
 
-        // если это дитя удаляемого то тоже удаляем
-        if (
-          parentId &&
-          toDelete.has(parentId) &&
-          !toDelete.has(String(r._id))
-        ) {
+        if (parentId && toDelete.has(parentId) && !toDelete.has(String(r._id))) {
           toDelete.add(String(r._id));
           changed = true;
         }
       }
     }
 
-    // фильтруем: оставляем только те кого НЕ удаляем
     comment.replies = replies.filter((r) => !toDelete.has(String(r._id)));
 
     await post.save();

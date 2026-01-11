@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import useSWR from "swr";
+import { useSession } from "next-auth/react";
 import {
   getFollowingUsers,
   getFollowingGames,
@@ -23,13 +24,17 @@ function getLocalProfile(userId) {
 }
 
 export default function FollowingPage() {
+  const { data: session, status } = useSession();
+  const myUserId = session?.user?.dbUserId || null;
+
+  // ✅ ХУКИ — ВСЕГДА СВЕРХУ, ДО ЛЮБЫХ return
   const [userIds, setUserIds] = useState([]);
   const [gameIds, setGameIds] = useState([]);
 
-  // игры возьмем просто все и отфильтруем (самый простой вариант)
-  const { data: games } = useSWR("/api/games", fetcher);
+  const { data: games } = useSWR(myUserId ? "/api/games" : null, fetcher);
 
   useEffect(() => {
+    // можно грузить даже если не залогинен — это просто localStorage
     setUserIds(getFollowingUsers());
     setGameIds(getFollowingGames());
   }, []);
@@ -48,6 +53,25 @@ export default function FollowingPage() {
   function unfollowGame(id) {
     const next = toggleFollowGame(id);
     setGameIds(next);
+  }
+
+  // ✅ теперь уже можно делать ранние return
+  if (status === "loading") {
+    return (
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
+        <h1 style={{ marginTop: 0 }}>Following</h1>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!myUserId) {
+    return (
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
+        <h1 style={{ marginTop: 0 }}>Following</h1>
+        <p>Please sign in to see who you follow (users and games).</p>
+      </div>
+    );
   }
 
   return (

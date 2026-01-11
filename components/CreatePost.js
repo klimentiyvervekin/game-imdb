@@ -1,28 +1,14 @@
 import { useState } from "react";
 import useSWR from "swr";
+import { useSession } from "next-auth/react";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
-function getClientId() {
-  if (typeof window === "undefined") return null;
-
-  let id = localStorage.getItem("clientId");
-
-  if (!id) {
-    // на всякий случай совместимее, чем randomUUID
-    id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem("clientId", id);
-  }
-
-  return id;
-}
-
-//IMAGE AND VIDEO UPLOAD
-// file -> base64 -> /api/upload -> url
+// IMAGE / VIDEO UPLOAD
 async function uploadToCloudinary(file, kind) {
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result); // data:image/.  ...;base64,...
+    reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -30,7 +16,7 @@ async function uploadToCloudinary(file, kind) {
   const res = await fetch("/api/upload", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ file: base64, kind }), // kind: "image" | "video"
+    body: JSON.stringify({ file: base64, kind }),
   });
 
   const json = await res.json();
@@ -39,51 +25,47 @@ async function uploadToCloudinary(file, kind) {
 }
 
 export default function CreatePost({ onCreated }) {
+  const { data: session, status } = useSession();
   const { data: games, error: gamesError } = useSWR("/api/games", fetcher);
 
   const [gameId, setGameId] = useState("");
   const [content, setContent] = useState("");
-
   const [imageFile, setImageFile] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
 
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const [fileKey, setFileKey] = useState(0); // state for input reset
+  const [fileKey, setFileKey] = useState(0);
 
   async function submit(e) {
     e.preventDefault();
     setErr("");
 
+    if (status === "loading") return;
+
+    // если не залогинен — не даём отправить
+    if (!session?.user?.dbUserId) {
+      return setErr("Please log in or sign in to write posts.");
+    }
+
     const trimmed = content.trim();
     if (!gameId) return setErr("Pick a game");
     if (!trimmed) return setErr("Write something");
 
-    const authorId = getClientId();
-    if (!authorId) return setErr("No authorId (clientId) on this device");
-
     setLoading(true);
     try {
-      // 1) upload media (optional)
       let imageUrl = "";
       let videoUrl = "";
 
-      if (imageFile) {
-        imageUrl = await uploadToCloudinary(imageFile, "image");
-      }
+      if (imageFile) imageUrl = await uploadToCloudinary(imageFile, "image");
+      if (videoFile) videoUrl = await uploadToCloudinary(videoFile, "video");
 
-      if (videoFile) {
-        videoUrl = await uploadToCloudinary(videoFile, "video");
-      }
-      // 2) create post with urls
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           gameId,
           content: trimmed,
-          authorId,
           imageUrl,
           videoUrl,
         }),
@@ -95,14 +77,16 @@ export default function CreatePost({ onCreated }) {
         return;
       }
 
+      // reset form
       setContent("");
       setGameId("");
       setImageFile(null);
       setVideoFile(null);
       setFileKey((k) => k + 1);
+
       onCreated?.();
     } catch (e2) {
-      setErr(e2.message || "Failed to create post");
+      setErr(e2?.message || "Failed to create post");
     } finally {
       setLoading(false);
     }
@@ -153,28 +137,6 @@ export default function CreatePost({ onCreated }) {
           accept="image/*"
           onChange={(e) => setImageFile(e.target.files?.[0] || null)}
         />
-        {imageFile && (
-          <div
-            style={{
-              marginTop: 6,
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-            }}
-          >
-            <span style={{ fontSize: 12, opacity: 0.7 }}>{imageFile.name}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setImageFile(null);
-                setFileKey((k) => k + 1);
-              }}
-              style={{ fontSize: 12 }}
-            >
-              Remove
-            </button>
-          </div>
-        )}
       </label>
 
       <label style={{ display: "block", marginBottom: 8 }}>
@@ -185,33 +147,11 @@ export default function CreatePost({ onCreated }) {
           accept="video/*"
           onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
         />
-        {videoFile && (
-          <div
-            style={{
-              marginTop: 6,
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-            }}
-          >
-            <span style={{ fontSize: 12, opacity: 0.7 }}>{videoFile.name}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setVideoFile(null);
-                setFileKey((k) => k + 1);
-              }}
-              style={{ fontSize: 12 }}
-            >
-              Remove
-            </button>
-          </div>
-        )}
       </label>
 
       {err && <p style={{ color: "crimson" }}>{err}</p>}
 
-      <button type="submit" disabled={loading}>
+      <button type="submit" disabled={loading || status === "loading"}>
         {loading ? "Posting..." : "Post"}
       </button>
     </form>

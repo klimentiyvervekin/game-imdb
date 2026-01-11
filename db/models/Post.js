@@ -8,57 +8,40 @@ const PostSchema = new mongoose.Schema(
       required: true,
     },
 
-    content: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    content: { type: String, required: true, trim: true },
 
-    imageUrl: {
-      type: String,
-      default: "",
-    },
+    imageUrl: { type: String, default: "" },
+    videoUrl: { type: String, default: "" },
 
-    videoUrl: {
-      type: String,
-      default: "",
-    },
+    authorId: { type: String, required: true }, // dbUserId
 
-    authorId: {
-      type: String,
-      required: true,
-    },
-
-    likedBy: {
-      type: [String],
-      default: [],
-    },
+    likedBy: { type: [String], default: [] }, // post likes
 
     comments: {
       type: [
         {
           _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
-          authorId: { type: String, required: true },
+          authorId: { type: String, required: true }, // dbUserId
           text: { type: String, required: true, trim: true },
           imageUrl: { type: String, default: "" },
           createdAt: { type: Date, default: Date.now },
 
-          likedBy: { type: [String], default: [] },
+          likedBy: { type: [String], default: [] }, // comment likes
 
           replies: {
             type: [
               {
                 _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
-                authorId: { type: String, required: true },
+                authorId: { type: String, required: true }, // dbUserId
                 text: { type: String, required: true, trim: true },
                 imageUrl: { type: String, default: "" },
-                replyToId: {
-                  type: mongoose.Schema.Types.ObjectId,
-                  default: null,
-                },
+
+                // reply-to-reply (store parent reply id as string)
+                replyToId: { type: String, default: null },
+
                 createdAt: { type: Date, default: Date.now },
 
-                likedBy: { type: [String], default: [] },
+                likedBy: { type: [String], default: [] }, // reply likes
               },
             ],
             default: [],
@@ -68,11 +51,7 @@ const PostSchema = new mongoose.Schema(
       default: [],
     },
 
-    type: {
-      type: String,
-      enum: ["text"],
-      default: "text",
-    },
+    type: { type: String, enum: ["text"], default: "text" },
   },
   { timestamps: true }
 );
