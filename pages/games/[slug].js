@@ -6,14 +6,17 @@ import styled from "styled-components";
 import ReviewSection from "../../components/ReviewSection";
 import PostSection from "@/components/PostSection";
 import { isFollowingGame, toggleFollowGame } from "@/lib/following";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
 export default function GamePage() {
   const router = useRouter();
   const { slug } = router.query;
+
+  const { data: session, status } = useSession();
+  const myUserId = session?.user?.dbUserId || null;
 
   const {
     data: game,
@@ -28,14 +31,16 @@ export default function GamePage() {
     setFollowedGame(isFollowingGame(game._id));
   }, [game?._id]);
 
+  function needLogin() {
+    alert("Please, register or log in to follow games.");
+  }
+
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Failed to load data</p>;
 
   if (!game || game.error) return <p>Game not found</p>;
 
-  const year = game.releaseDate
-    ? new Date(game.releaseDate).getFullYear()
-    : null;
+  const year = game.releaseDate ? new Date(game.releaseDate).getFullYear() : null;
 
   return (
     <Page>
@@ -62,6 +67,9 @@ export default function GamePage() {
           <button
             type="button"
             onClick={() => {
+              if (status === "loading") return;
+              if (!myUserId) return needLogin();
+
               toggleFollowGame(game._id);
               setFollowedGame(isFollowingGame(game._id));
             }}
@@ -125,8 +133,7 @@ export default function GamePage() {
             Photos & Videos
             {typeof game.screenshotsCount === "number" &&
               ` (${game.screenshotsCount} photos`}
-            {typeof game.videosCount === "number" &&
-              `, ${game.videosCount} videos`}
+            {typeof game.videosCount === "number" && `, ${game.videosCount} videos`}
           </MediaButton>
         </Link>
       </Card>

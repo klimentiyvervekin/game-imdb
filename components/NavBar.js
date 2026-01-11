@@ -1,23 +1,9 @@
-// components/NavBar.js
 import Link from "next/link";
-import { useEffect } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 export default function NavBar() {
-  const { data: session, status } = useSession();
-
-  // на всякий случай "убеждаемся", что юзер есть в Mongo
-  // (теперь без clientId, сервер сам берёт dbUserId из session)
-  useEffect(() => {
-    if (status !== "authenticated") return;
-
-    fetch("/api/users/me", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    }).catch(() => {});
-  }, [status]);
-
-  const myId = session?.user?.dbUserId || null;
+  const { data: session } = useSession();
+  const myUserId = session?.user?.dbUserId || null;
 
   return (
     <div
@@ -30,8 +16,17 @@ export default function NavBar() {
     >
       <Link href="/">Home</Link>
 
-      {/* профиль есть только у залогиненного */}
-      {myId ? <Link href={`/users/${myId}`}>Profile</Link> : <span>Profile</span>}
+      {myUserId ? (
+        <Link href={`/users/${myUserId}`}>Profile</Link>
+      ) : (
+        <button
+          type="button"
+          onClick={() => alert("Please log in to open your profile")}
+          style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+        >
+          Profile
+        </button>
+      )}
 
       <Link href="/bookmarks">Following</Link>
       <Link href="/likes">Likes</Link>

@@ -7,19 +7,19 @@ import User from "../../../db/models/User";
 
 export default async function handler(req, res) {
   try {
-    await dbConnect();
-    const { id } = req.query; // теперь это dbUserId (Mongo _id)
+    const { id } = req.query; // dbUserId (Mongo _id)
 
     if (!id || typeof id !== "string") {
       return res.status(400).json({ error: "Bad user id" });
     }
 
-    // GET /api/users/:id  (публичный профиль, доступно всем)
+    await dbConnect();
+
+    // GET /api/users/:id  (публичный профиль)
     if (req.method === "GET") {
       const user = await User.findById(id).lean();
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      // отдаём только безопасные поля
       return res.status(200).json({
         _id: String(user._id),
         name: user.name || "User",
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // PUT /api/users/:id  (может менять только владелец)
+    // PUT /api/users/:id (только владелец)
     if (req.method === "PUT") {
       const session = await getServerSession(req, res, authOptions);
       const myId = session?.user?.dbUserId;
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
           avatarUrl: String(avatarUrl || "").trim(),
         },
         { new: true }
-      );
+      ).lean();
 
       if (!user) return res.status(404).json({ error: "User not found" });
 

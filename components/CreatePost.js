@@ -25,7 +25,7 @@ async function uploadToCloudinary(file, kind) {
 }
 
 export default function CreatePost({ onCreated }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { data: games, error: gamesError } = useSWR("/api/games", fetcher);
 
   const [gameId, setGameId] = useState("");
@@ -41,33 +41,31 @@ export default function CreatePost({ onCreated }) {
     e.preventDefault();
     setErr("");
 
+    if (status === "loading") return;
+
     // если не залогинен — не даём отправить
     if (!session?.user?.dbUserId) {
-      return setErr("Please log in or sign in to write a posts.");
+      return setErr("Please log in or sign in to write posts.");
     }
 
+    const trimmed = content.trim();
     if (!gameId) return setErr("Pick a game");
-    if (!content.trim()) return setErr("Write something");
+    if (!trimmed) return setErr("Write something");
 
     setLoading(true);
     try {
       let imageUrl = "";
       let videoUrl = "";
 
-      if (imageFile) {
-        imageUrl = await uploadToCloudinary(imageFile, "image");
-      }
-
-      if (videoFile) {
-        videoUrl = await uploadToCloudinary(videoFile, "video");
-      }
+      if (imageFile) imageUrl = await uploadToCloudinary(imageFile, "image");
+      if (videoFile) videoUrl = await uploadToCloudinary(videoFile, "video");
 
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           gameId,
-          content: content.trim(),
+          content: trimmed,
           imageUrl,
           videoUrl,
         }),
@@ -87,8 +85,8 @@ export default function CreatePost({ onCreated }) {
       setFileKey((k) => k + 1);
 
       onCreated?.();
-    } catch (e) {
-      setErr(e.message || "Failed to create post");
+    } catch (e2) {
+      setErr(e2?.message || "Failed to create post");
     } finally {
       setLoading(false);
     }
@@ -153,7 +151,7 @@ export default function CreatePost({ onCreated }) {
 
       {err && <p style={{ color: "crimson" }}>{err}</p>}
 
-      <button type="submit" disabled={loading}>
+      <button type="submit" disabled={loading || status === "loading"}>
         {loading ? "Posting..." : "Post"}
       </button>
     </form>
