@@ -27,7 +27,7 @@ export default function FollowingPage() {
   const { data: session, status } = useSession();
   const myUserId = session?.user?.dbUserId || null;
 
-  // ✅ ХУКИ — ВСЕГДА СВЕРХУ, ДО ЛЮБЫХ return
+  // ХУКИ — ВСЕГДА СВЕРХУ, ДО ЛЮБЫХ return
   const [userIds, setUserIds] = useState([]);
   const [gameIds, setGameIds] = useState([]);
 
@@ -55,7 +55,7 @@ export default function FollowingPage() {
     setGameIds(next);
   }
 
-  // ✅ теперь уже можно делать ранние return
+  // теперь уже можно делать ранние return
   if (status === "loading") {
     return (
       <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>

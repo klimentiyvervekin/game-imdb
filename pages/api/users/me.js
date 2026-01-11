@@ -29,12 +29,12 @@ export default async function handler(req, res) {
     }
 
     // POST /api/users/me
-    // "убедиться что я есть" — но БЕЗ upsert без email (иначе 500)
+    // "убедиться что я есть" но БЕЗ upsert без email (иначе 500)
     if (req.method === "POST") {
       const email = String(session?.user?.email || "").trim();
       const name = String(session?.user?.name || "User").trim();
 
-      // если вдруг session без email — не создаём (иначе UserSchema required email даст 500)
+      // если вдруг session без email - не создаём (иначе UserSchema required email даст 500)
       if (!email) {
         return res.status(400).json({ error: "Session email is missing" });
       }
