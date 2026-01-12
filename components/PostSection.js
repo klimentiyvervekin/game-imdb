@@ -8,7 +8,7 @@ const fetcher = (url) => fetch(url).then((r) => r.json());
 
 export default function PostSection({ gameId }) {
   const { data: session } = useSession();
-  const myUserId = session?.user?.dbUserId || null;
+  const myUserId = session?.user?.dbUserId || null; // mongo user id
 
   const { data: posts, mutate } = useSWR(
     gameId ? `/api/posts?gameId=${gameId}` : null,
@@ -31,7 +31,6 @@ export default function PostSection({ gameId }) {
       body: JSON.stringify({
         gameId,
         content: text,
-        // authorId больше не отправляем - сервер берёт userId из session
       }),
     });
 

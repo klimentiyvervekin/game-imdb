@@ -1,4 +1,4 @@
-// pages/api/users/[id].js
+// pages/api/users/[id].js (for local storage for every user, dont need this anymore)
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 
@@ -38,22 +38,25 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: "Not allowed" });
       }
 
-      const { name, bio = "", avatarUrl = "" } = req.body;
+      // не ставлю avatarUrl = "" по умолчанию, чтобы не затирать
+      const { name, bio = "", avatarUrl } = req.body;
 
       const trimmedName = String(name || "").trim();
       if (!trimmedName) {
         return res.status(400).json({ error: "name is required" });
       }
 
-      const user = await User.findByIdAndUpdate(
-        id,
-        {
-          name: trimmedName,
-          bio: String(bio || "").trim(),
-          avatarUrl: String(avatarUrl || "").trim(),
-        },
-        { new: true }
-      ).lean();
+      // обновляем avatarUrl только если он реально пришёл
+      const update = {
+        name: trimmedName,
+        bio: String(bio || "").trim(),
+      };
+
+      if (typeof avatarUrl === "string") {
+        update.avatarUrl = avatarUrl.trim();
+      }
+
+      const user = await User.findByIdAndUpdate(id, update, { new: true }).lean();
 
       if (!user) return res.status(404).json({ error: "User not found" });
 

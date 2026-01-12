@@ -36,11 +36,13 @@ export default function UserProfilePage() {
 
   // drafts (for edit)
   const [nameDraft, setNameDraft] = useState("User");
-  const [avatarDraft, setAvatarDraft] = useState("");
   const [bioDraft, setBioDraft] = useState("");
   const [saveError, setSaveError] = useState("");
 
   const [followed, setFollowed] = useState(false);
+
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
 
   useEffect(() => {
     if (!userId) return;
@@ -51,7 +53,6 @@ export default function UserProfilePage() {
   useEffect(() => {
     if (!profile) return;
     setNameDraft(profile.name || "User");
-    setAvatarDraft(profile.avatarUrl || "");
     setBioDraft(profile.bio || "");
   }, [profile]);
 
@@ -65,6 +66,86 @@ export default function UserProfilePage() {
 
   if (!userId) return <p>Loading...</p>;
 
+  //--------- 2 helper function for avatar upload -----------//
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // simple client-side resize/compress
+  async function compressImage(file, maxSize = 512, quality = 0.8) {
+    const imgUrl = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.src = imgUrl;
+    await new Promise((r) => (img.onload = r));
+
+    const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, w, h);
+
+    URL.revokeObjectURL(imgUrl);
+
+    // jpg is good for size
+    return canvas.toDataURL("image/jpeg", quality);
+  }
+
+  async function uploadAvatar(file) {
+    setAvatarError("");
+    setAvatarUploading(true);
+
+    try {
+      // 1 compress
+      const base64 = await compressImage(file, 512, 0.8);
+
+      // 2 upload to cloudinary via API
+      const up = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file: base64, kind: "avatar" }),
+      });
+
+      const upJson = await up.json();
+      if (!up.ok) {
+        setAvatarError(upJson?.error || "Upload failed");
+        return;
+      }
+
+      // 3 save avatarUrl to my user in DB
+      const save = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: nameDraft,
+          bio: bioDraft,
+          avatarUrl: upJson.url, // here save
+        }),
+      });
+
+      const saveJson = await save.json();
+      if (!save.ok) {
+        setAvatarError(saveJson?.error || "Failed to save avatar");
+        return;
+      }
+
+      mutateProfile(); // update UI
+    } catch (e) {
+      setAvatarError(e.message || "Upload failed");
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+  //----------------------------------------------------//
+
   async function saveProfile() {
     setSaveError("");
 
@@ -74,8 +155,8 @@ export default function UserProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: nameDraft,
-          avatarUrl: avatarDraft,
           bio: bioDraft,
+          avatarUrl: profile?.avatarUrl || "",
         }),
       });
 
@@ -97,12 +178,14 @@ export default function UserProfilePage() {
     <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
       <h1 style={{ marginTop: 0 }}>Profile</h1>
 
-      {profileError && <p style={{ color: "crimson" }}>Failed to load profile</p>}
+      {profileError && (
+        <p style={{ color: "crimson" }}>Failed to load profile</p>
+      )}
       {!profile && !profileError && <p>Loading profile...</p>}
 
       {profile && (
         <>
-          {/* Header */}
+          {/* header */}
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <div
               style={{
@@ -136,6 +219,39 @@ export default function UserProfilePage() {
               )}
             </div>
 
+            {isMe && (
+              <div style={{ marginTop: 8 }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={avatarUploading}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+
+                    // простая защита. (только картинки и не огромные)
+                    if (!f.type.startsWith("image/")) {
+                      setAvatarError("Please select an image file.");
+                      return;
+                    }
+
+                    uploadAvatar(f);
+                    e.target.value = ""; // чтобы можно было выбрать тот же файл ещё раз
+                  }}
+                />
+
+                {avatarUploading && (
+                  <p style={{ fontSize: 12, opacity: 0.7 }}>
+                    Uploading avatar...
+                  </p>
+                )}
+
+                {avatarError && (
+                  <p style={{ color: "crimson" }}>{avatarError}</p>
+                )}
+              </div>
+            )}
+
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 20, fontWeight: 700 }}>
                 {profile.name || "User"}
@@ -166,17 +282,19 @@ export default function UserProfilePage() {
 
                 <span style={{ flex: 1 }} />
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    toggleFollowUser(userId);
-                    setFollowed(isFollowingUser(userId));
-                  }}
-                >
-                  {followed ? "Unfollow" : "Follow"}
-                </button>
+                {!isMe && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleFollowUser(userId);
+                      setFollowed(isFollowingUser(userId));
+                    }}
+                  >
+                    {followed ? "Unfollow" : "Follow"}
+                  </button>
+                )}
 
-                {/* ✅ редактировать можно только свой профиль */}
+                {/* редактировать можно только свой профиль */}
                 <button
                   type="button"
                   onClick={() => setEditMode((v) => !v)}
@@ -210,16 +328,6 @@ export default function UserProfilePage() {
                 </label>
 
                 <label>
-                  Avatar URL
-                  <input
-                    value={avatarDraft}
-                    onChange={(e) => setAvatarDraft(e.target.value)}
-                    placeholder="https://..."
-                    style={{ width: "100%", marginTop: 4 }}
-                  />
-                </label>
-
-                <label>
                   Bio
                   <textarea
                     rows={3}
@@ -240,7 +348,6 @@ export default function UserProfilePage() {
                     onClick={() => {
                       setEditMode(false);
                       setNameDraft(profile.name || "User");
-                      setAvatarDraft(profile.avatarUrl || "");
                       setBioDraft(profile.bio || "");
                       setSaveError("");
                     }}
@@ -262,7 +369,9 @@ export default function UserProfilePage() {
                   <p style={{ color: "crimson" }}>Failed to load posts</p>
                 )}
                 {!posts && !postsError && <p>Loading...</p>}
-                {Array.isArray(posts) && posts.length === 0 && <p>No posts yet</p>}
+                {Array.isArray(posts) && posts.length === 0 && (
+                  <p>No posts yet</p>
+                )}
 
                 {Array.isArray(posts) &&
                   posts.map((p) => (
@@ -308,7 +417,11 @@ export default function UserProfilePage() {
                         <video
                           src={p.videoUrl}
                           controls
-                          style={{ width: "100%", borderRadius: 10, marginTop: 8 }}
+                          style={{
+                            width: "100%",
+                            borderRadius: 10,
+                            marginTop: 8,
+                          }}
                         />
                       )}
                     </div>
@@ -367,9 +480,14 @@ export default function UserProfilePage() {
                         >
                           <strong style={{ fontSize: 13 }}>Updates</strong>
 
-                          <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
+                          <div
+                            style={{ display: "grid", gap: 8, marginTop: 6 }}
+                          >
                             {r.updates.map((u, i) => (
-                              <div key={u.createdAt + i} style={{ fontSize: 13 }}>
+                              <div
+                                key={u.createdAt + i}
+                                style={{ fontSize: 13 }}
+                              >
                                 <div style={{ fontSize: 12, opacity: 0.7 }}>
                                   {new Date(u.createdAt).toLocaleString()}
                                   {u.hasSpoilers && <span> • ⚠️ Spoilers</span>}

@@ -6,10 +6,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Увеличиваем лимит body, потому что base64 может быть большой
+// увеличиваем лимит body потому что base64 может быть большой
 export const config = {
   api: {
-    bodyParser: { sizeLimit: "25mb" }, // для видео может быть мало — см. ниже
+    bodyParser: { sizeLimit: "25mb" },
   },
 };
 
@@ -19,13 +19,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { file, kind } = req.body; // kind: "image" | "video"
+    const { file, kind } = req.body; // kind: "image" | "video" | "avatar"
 
     if (!file) {
       return res.status(400).json({ error: "No file provided" });
     }
 
     const resourceType = kind === "video" ? "video" : "image";
+    const folder = kind === "avatar" ? "avatars" : "posts";
 
     const result = await cloudinary.uploader.upload(file, {
       resource_type: resourceType,

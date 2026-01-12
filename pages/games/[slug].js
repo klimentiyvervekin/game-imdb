@@ -40,7 +40,9 @@ export default function GamePage() {
 
   if (!game || game.error) return <p>Game not found</p>;
 
-  const year = game.releaseDate ? new Date(game.releaseDate).getFullYear() : null;
+  const year = game.releaseDate
+    ? new Date(game.releaseDate).getFullYear()
+    : null;
 
   return (
     <Page>
@@ -133,7 +135,8 @@ export default function GamePage() {
             Photos & Videos
             {typeof game.screenshotsCount === "number" &&
               ` (${game.screenshotsCount} photos`}
-            {typeof game.videosCount === "number" && `, ${game.videosCount} videos`}
+            {typeof game.videosCount === "number" &&
+              `, ${game.videosCount} videos`}
           </MediaButton>
         </Link>
       </Card>

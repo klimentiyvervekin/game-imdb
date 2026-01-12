@@ -15,9 +15,8 @@ export const authOptions = {
   session: { strategy: "jwt" },
 
   callbacks: {
-
     async jwt({ token, account, profile }) {
-      // этот блок с account/profile приходит в момент логина
+      // 1 в момент логина — создаём/обновляем юзера и кладём mongo _id в token
       if (account?.provider === "google" && profile?.email) {
         await dbConnect();
 
@@ -38,15 +37,27 @@ export const authOptions = {
           { new: true, upsert: true }
         );
 
-        // ложу id пользователя из монго в token
         token.dbUserId = String(dbUser._id);
         token.email = dbUser.email;
+        return token;
+      }
+
+      // 2 страховка: если токен старый/кривой и dbUserId нет,
+      // но email есть — достаём юзера из Mongo и кладём _id
+      if (!token.dbUserId && token.email) {
+        await dbConnect();
+        const dbUser = await User.findOne({ email: token.email })
+          .select("_id email")
+          .lean();
+        if (dbUser) {
+          token.dbUserId = String(dbUser._id);
+          token.email = dbUser.email;
+        }
       }
 
       return token;
     },
 
-    // пробрасываю в session то что удобно использовать на фронте
     async session({ session, token }) {
       if (session?.user) {
         session.user.dbUserId = token.dbUserId || null;
