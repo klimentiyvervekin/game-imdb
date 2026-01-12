@@ -12,9 +12,10 @@ import {
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
+// this is only for local storage - dont need this anymore
 function getLocalProfile(userId) {
-  if (typeof window === "undefined") return { name: "User", avatarUrl: "" };
-  const raw = localStorage.getItem(`profile:${userId}`);
+  if (typeof window === "undefined") return { name: "User", avatarUrl: "" }; // если код на сервере то сторедж недоступен
+  const raw = localStorage.getItem(`profile:${userId}`); // ключ
   if (!raw) return { name: "User", avatarUrl: "" };
   try {
     return JSON.parse(raw);
@@ -34,11 +35,12 @@ export default function FollowingPage() {
   const { data: games } = useSWR(myUserId ? "/api/games" : null, fetcher);
 
   useEffect(() => {
-    // можно грузить даже если не залогинен — это просто localStorage
+    // можно грузить даже если не залогинен. это просто localStorage (больше не нужен код)
     setUserIds(getFollowingUsers());
     setGameIds(getFollowingGames());
   }, []);
 
+  // тоже не нужно
   const followedGames = useMemo(() => {
     if (!Array.isArray(games)) return [];
     const set = new Set(gameIds.map(String));

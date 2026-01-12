@@ -3,11 +3,11 @@ import GameCard from "./GameCard";
 import PostCard from "./PostCard";
 
 export default function FeedList({ games = [], posts = [], onPostsChange }) {
-  const safeGames = Array.isArray(games) ? games : [];
+  const safeGames = Array.isArray(games) ? games : []; // защита от null undefined случайных значений если все полетит
   const safePosts = Array.isArray(posts) ? posts : [];
 
   const handlePostsChange =
-    typeof onPostsChange === "function" ? onPostsChange : () => {};
+    typeof onPostsChange === "function" ? onPostsChange : () => {}; // проверяем что onPostsChange реально функция
 
   const feed = [
     ...safeGames.map((g) => ({ type: "game", ...g })),

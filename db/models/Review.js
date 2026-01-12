@@ -23,12 +23,12 @@ const ReviewSchema = new mongoose.Schema(
       default: "Anonymous",
     },
 
-    authorId: { type: String, default: null }, // clientId
+    authorId: { type: String, default: null }, 
     hasSpoilers: { type: Boolean, default: false },
 
     helpfulCount: { type: Number, default: 0 },
     notHelpfulCount: { type: Number, default: 0 },
-    helpfulVoters: [{ type: String }], // clientId until now
+    helpfulVoters: [{ type: String }], 
     notHelpfulVoters: [{ type: String }],
 
     updates: [
@@ -36,7 +36,7 @@ const ReviewSchema = new mongoose.Schema(
         text: { type: String, required: true, trim: true },
         createdAt: { type: Date, default: Date.now },
 
-        authorId: { type: String, default: null }, // clientId
+        authorId: { type: String, default: null }, 
         hasSpoilers: { type: Boolean, default: false },
 
         helpfulCount: { type: Number, default: 0 },

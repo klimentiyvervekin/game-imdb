@@ -4,7 +4,7 @@ import useSWR from "swr";
 import styled from "styled-components";
 import { useSession } from "next-auth/react";
 
-const EDIT_WINDOW_MS = 15 * 60 * 1000;
+const EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 минут
 
 const fetcher = async (url) => {
   const res = await fetch(url);
@@ -14,8 +14,8 @@ const fetcher = async (url) => {
 };
 
 export default function ReviewSection({ gameId }) {
-  const { data: session } = useSession();
-  const myUserId = session?.user?.dbUserId || null;
+  const { data: session } = useSession(); // хук для авторизации
+  const myUserId = session?.user?.dbUserId || null; // user id
 
   const {
     data: reviews,
@@ -56,11 +56,11 @@ export default function ReviewSection({ gameId }) {
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    return () => clearInterval(t); // Keeps current timestamp in state and updates it every second to trigger re-renders
   }, []);
   //--------------------------//
 
-  //----------------mm:ss format-------------//
+  //----------------mm:ss format // Formats milliseconds as minutes and seconds-------------//
   function formatMs(ms) {
     const totalSec = Math.max(0, Math.floor(ms / 1000));
     const m = String(Math.floor(totalSec / 60)).padStart(2, "0");
@@ -68,7 +68,7 @@ export default function ReviewSection({ gameId }) {
     return `${m}:${s}`;
   }
   //-------------------------//
-
+  // rating
   const stats = useMemo(() => {
     const list = reviews || [];
     const count = list.length;
@@ -82,9 +82,7 @@ export default function ReviewSection({ gameId }) {
   }, [reviews]);
 
   function needLogin() {
-    alert(
-      "Пожалуйста, зарегистрируйтесь или войдите, чтобы писать ревью, лайкать и комментировать"
-    );
+    alert("Please sign in or log in, to write review, like and comment");
   }
 
   //----------------edit review (update review too)----------------//
@@ -95,7 +93,6 @@ export default function ReviewSection({ gameId }) {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        // ✅ authorId больше не отправляем — сервер должен проверять по session
         text: editText,
         rating: editRating,
         hasSpoilers: editHasSpoilers,
@@ -119,7 +116,7 @@ export default function ReviewSection({ gameId }) {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        // ✅ authorId больше не отправляем — сервер должен проверять по session
+        // authorId больше не отправляем — сервер должен проверять по session
         text: editUpdateText,
         hasSpoilers: editUpdateHasSpoilers,
       }),
@@ -166,7 +163,6 @@ export default function ReviewSection({ gameId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: updateText,
-          // ✅ authorId больше не отправляем — сервер должен брать из session
           hasSpoilers: updateHasSpoilers,
         }),
       });
@@ -221,7 +217,6 @@ export default function ReviewSection({ gameId }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type }),
-      // ✅ voterId больше не отправляем — сервер должен брать из session
     });
     await mutate();
   }
@@ -233,7 +228,6 @@ export default function ReviewSection({ gameId }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type }),
-      // ✅ voterId больше не отправляем — сервер должен брать из session
     });
     await mutate();
   }
@@ -254,7 +248,6 @@ export default function ReviewSection({ gameId }) {
           gameId,
           rating,
           text,
-          // ✅ authorId больше не отправляем — сервер должен брать из session
           hasSpoilers,
         }),
       });
@@ -346,8 +339,9 @@ export default function ReviewSection({ gameId }) {
           const reviewAge = now - new Date(r.createdAt).getTime();
           const reviewLeft = EDIT_WINDOW_MS - reviewAge;
 
-          // ✅ проверяем владение по dbUserId из session
-          const canEditReview = myUserId && r.authorId === myUserId && reviewLeft > 0;
+          // проверяем владение по dbUserId из session
+          const canEditReview =
+            myUserId && r.authorId === myUserId && reviewLeft > 0;
 
           return (
             <Card key={r._id}>
