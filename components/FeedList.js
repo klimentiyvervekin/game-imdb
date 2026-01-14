@@ -1,42 +1,83 @@
 import styled from "styled-components";
 import GameCard from "./GameCard";
 import PostCard from "./PostCard";
+import { Heart } from "lucide-react";
 
 export default function FeedList({ games = [], posts = [], onPostsChange }) {
-  const safeGames = Array.isArray(games) ? games : []; // защита от null undefined случайных значений если все полетит
+  const safeGames = Array.isArray(games) ? games : [];
   const safePosts = Array.isArray(posts) ? posts : [];
 
   const handlePostsChange =
-    typeof onPostsChange === "function" ? onPostsChange : () => {}; // проверяем что onPostsChange реально функция
+    typeof onPostsChange === "function" ? onPostsChange : () => {};
 
-  const feed = [
-    ...safeGames.map((g) => ({ type: "game", ...g })),
-    ...safePosts.map((p) => ({ type: "post", ...p })),
-  ].sort((a, b) => {
+  // отдельно сортируем (чтобы в каждой колонке было "новое сверху")
+  const sortedPosts = [...safePosts].sort((a, b) => {
     const aTime = new Date(a.createdAt || 0).getTime();
     const bTime = new Date(b.createdAt || 0).getTime();
-    return bTime - aTime; // new to the up
+    return bTime - aTime;
+  });
+
+  const sortedGames = [...safeGames].sort((a, b) => {
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
+    return bTime - aTime;
   });
 
   return (
-    <Grid>
-      {feed.map((item) => (
-        <Item key={`${item.type}-${item._id}`}>
-          {item.type === "game" ? (
-            <GameCard game={item} />
-          ) : (
-            <PostCard post={item} onChange={handlePostsChange} />
-          )}
-        </Item>
-      ))}
-    </Grid>
+    <Layout>
+      <Left>
+        <ColumnGrid>
+          {sortedPosts.map((p) => (
+            <Item key={`post-${p._id}`}>
+              <PostCard post={p} onChange={handlePostsChange} />
+            </Item>
+          ))}
+        </ColumnGrid>
+      </Left>
+
+      <Right>
+        <ColumnGrid>
+          {sortedGames.map((g) => (
+            <Item key={`game-${g._id}`}>
+              <GameCard game={g} />
+            </Item>
+          ))}
+        </ColumnGrid>
+      </Right>
+    </Layout>
   );
 }
 
-const Grid = styled.section`
+/* ===================== styles ===================== */
+
+const Layout = styled.section`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: 1fr 360px; /* слева широкий фид, справа колонка игр */
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 980px) {
+    grid-template-columns: 1fr; /* на мобиле друг под другом */
+  }
+`;
+
+const Left = styled.div`
+  min-width: 0;
+`;
+
+const Right = styled.aside`
+  min-width: 0;
+
+  @media (max-width: 980px) {
+    order: 2; /* игры вниз на мобиле */
+  }
+`;
+
+const ColumnGrid = styled.div`
+  display: grid;
   gap: 16px;
 `;
 
-const Item = styled.div``;
+const Item = styled.div`
+  min-width: 0;
+`;

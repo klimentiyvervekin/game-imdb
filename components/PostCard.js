@@ -3,6 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import styled from "styled-components";
+import { Heart } from "lucide-react";
 
 async function uploadToCloudinary(file, kind) {
   const base64 = await new Promise((resolve, reject) => {
@@ -348,8 +350,8 @@ export default function PostCard({ post, onChange }) {
   }
 
   return (
-    <div style={{ border: "1px solid #ddd", padding: 12, borderRadius: 10 }}>
-      <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 8 }}>
+    <Card>
+      <TopMeta>
         {game?.slug ? (
           <Link href={`/games/${game.slug}`}>
             Related to: {game.title || game.slug}
@@ -357,79 +359,74 @@ export default function PostCard({ post, onChange }) {
         ) : (
           <span>Related to: (unknown game)</span>
         )}
-      </div>
+      </TopMeta>
 
       {/* ================= VIEW MODE ================= */}
       {!isEditing && (
         <>
-          <small style={{ opacity: 0.6 }}>
+          <SmallMuted>
             {post.createdAt ? new Date(post.createdAt).toLocaleString() : ""}
-          </small>
+          </SmallMuted>
 
-          <div style={{ marginTop: 6 }}>
-            <Link
-              href={`/users/${post.authorId}`}
-              style={{ fontSize: 12, opacity: 0.7 }}
-            >
-              Author profile
-            </Link>
-          </div>
+          <AuthorLine>
+            <Link href={`/users/${post.authorId}`}>Author profile</Link>
+          </AuthorLine>
 
-          <p style={{ marginTop: 8 }}>{post.content}</p>
+          <Body>{post.content}</Body>
 
           {post.imageUrl && (
-            <Image
+            <MediaImage
               src={post.imageUrl}
               alt=""
               width={800}
               height={450}
-              style={{ width: "100%", height: "auto", borderRadius: 10 }}
             />
           )}
 
-          {post.videoUrl && (
-            <video
-              src={post.videoUrl}
-              controls
-              style={{ width: "100%", borderRadius: 10, marginTop: 8 }}
-            />
-          )}
+          {post.videoUrl && <MediaVideo src={post.videoUrl} controls />}
 
           {/* POST ACTIONS */}
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <ActionsRow>
             {isMinePost && (
               <>
-                <button type="button" onClick={startEdit} disabled={loading}>
+                <Button type="button" onClick={startEdit} disabled={loading}>
                   Edit
-                </button>
+                </Button>
 
-                <button type="button" onClick={del} disabled={loading}>
+                <DangerButton type="button" onClick={del} disabled={loading}>
                   Delete
-                </button>
+                </DangerButton>
               </>
             )}
 
-            <button type="button" onClick={toggleLike} disabled={loading}>
+            <PrimaryButton
+              type="button"
+              onClick={toggleLike}
+              disabled={loading}
+            >
               {likedByMe ? "Unlike" : "Like"} ({likesCount})
-            </button>
-          </div>
+            </PrimaryButton>
+          </ActionsRow>
 
           {/* COMMENT FORM */}
-          <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input
+          <CommentBox>
+            <CommentRow>
+              <TextInput
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Write a comment..."
-                style={{ flex: 1 }}
               />
-              <button type="button" onClick={submitComment} disabled={loading}>
+              <PrimaryButton
+                type="button"
+                onClick={submitComment}
+                disabled={loading}
+              >
                 Send
-              </button>
-            </div>
+              </PrimaryButton>
+            </CommentRow>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
+            <FileRow>
+              <FileInput
                 type="file"
                 accept="image/*"
                 onChange={(e) =>
@@ -437,22 +434,22 @@ export default function PostCard({ post, onChange }) {
                 }
               />
               {commentImageFile && (
-                <button
+                <Button
                   type="button"
                   onClick={() => setCommentImageFile(null)}
                   disabled={loading}
                 >
                   Remove image
-                </button>
+                </Button>
               )}
-            </div>
-          </div>
+            </FileRow>
+          </CommentBox>
 
           {/* COMMENTS LIST */}
-          <div style={{ marginTop: 12 }}>
-            <strong style={{ fontSize: 13 }}>Comments</strong>
+          <CommentsWrap>
+            <CommentsTitle>Comments</CommentsTitle>
 
-            <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
+            <CommentsGrid>
               {(post.comments || []).map((c) => {
                 const isMineComment =
                   myUserId && String(c.authorId) === String(myUserId);
@@ -467,40 +464,29 @@ export default function PostCard({ post, onChange }) {
                   c.likedBy.includes(String(myUserId));
 
                 return (
-                  <div
-                    key={c._id}
-                    style={{
-                      padding: 8,
-                      border: "1px solid #eee",
-                      borderRadius: 8,
-                    }}
-                  >
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>
+                  <CommentCard key={c._id}>
+                    <SmallMuted>
                       {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
-                    </div>
+                    </SmallMuted>
 
-                    <Link href={`/users/${c.authorId}`}>user</Link>
+                    <UserLinkRow>
+                      <Link href={`/users/${c.authorId}`}>user</Link>
+                    </UserLinkRow>
 
-                    <div style={{ marginTop: 4 }}>{c.text}</div>
+                    <CommentText>{c.text}</CommentText>
 
                     {c.imageUrl && (
-                      <Image
+                      <MediaImage
                         src={c.imageUrl}
                         alt=""
                         width={600}
                         height={400}
-                        style={{
-                          width: "100%",
-                          height: "auto",
-                          borderRadius: 8,
-                          marginTop: 6,
-                        }}
                       />
                     )}
 
                     {/* COMMENT ACTIONS */}
-                    <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                      <button
+                    <ActionsRowSmall>
+                      <LinkButton
                         type="button"
                         onClick={() => {
                           setReplyOpenForId(
@@ -510,43 +496,33 @@ export default function PostCard({ post, onChange }) {
                           setReplyImageFile(null);
                           setReplyTo({ commentId: c._id, replyToId: null });
                         }}
-                        style={{ fontSize: 12 }}
                         disabled={loading}
                       >
                         Reply
-                      </button>
+                      </LinkButton>
 
-                      <button
+                      <LinkButton
                         type="button"
                         onClick={() => toggleCommentLike(c._id)}
-                        style={{ fontSize: 12 }}
                         disabled={loading}
                       >
                         {commentLikedByMe ? "Unlike" : "Like"} ({commentLikes})
-                      </button>
+                      </LinkButton>
 
                       {isMineComment && (
-                        <button
+                        <LinkDanger
                           type="button"
                           onClick={() => deleteComment(c._id)}
-                          style={{ fontSize: 12, color: "crimson" }}
                           disabled={loading}
                         >
                           Delete
-                        </button>
+                        </LinkDanger>
                       )}
-                    </div>
+                    </ActionsRowSmall>
 
                     {/* REPLIES LIST */}
                     {Array.isArray(c.replies) && c.replies.length > 0 && (
-                      <div
-                        style={{
-                          marginTop: 6,
-                          marginLeft: 16,
-                          display: "grid",
-                          gap: 6,
-                        }}
-                      >
+                      <RepliesWrap>
                         {c.replies.map((r) => {
                           const isMineReply =
                             myUserId && String(r.authorId) === String(myUserId);
@@ -561,54 +537,34 @@ export default function PostCard({ post, onChange }) {
                             r.likedBy.includes(String(myUserId));
 
                           return (
-                            <div
-                              key={r._id}
-                              style={{
-                                padding: 8,
-                                border: "1px solid #f0f0f0",
-                                borderRadius: 8,
-                              }}
-                            >
-                              <div style={{ fontSize: 12, opacity: 0.7 }}>
+                            <ReplyCard key={r._id}>
+                              <SmallMuted>
                                 {r.createdAt
                                   ? new Date(r.createdAt).toLocaleString()
                                   : ""}
-                              </div>
+                              </SmallMuted>
 
                               {r.replyToId && (
-                                <div style={{ fontSize: 12, opacity: 0.6 }}>
+                                <ReplyToLine>
                                   Reply to: {String(r.replyToId).slice(-6)}
-                                </div>
+                                </ReplyToLine>
                               )}
 
-                              <div style={{ marginTop: 4 }}>{r.text}</div>
+                              <CommentText>{r.text}</CommentText>
 
                               {r.imageUrl && (
-                                <Image
+                                <MediaImage
                                   src={r.imageUrl}
                                   alt=""
                                   width={600}
                                   height={400}
-                                  style={{
-                                    width: "100%",
-                                    height: "auto",
-                                    borderRadius: 8,
-                                    marginTop: 6,
-                                  }}
                                 />
                               )}
 
                               {/* REPLY ACTIONS */}
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: 8,
-                                  marginTop: 6,
-                                }}
-                              >
-                                <button
+                              <ActionsRowSmall>
+                                <LinkButton
                                   type="button"
-                                  style={{ fontSize: 12 }}
                                   onClick={() => {
                                     setReplyOpenForId(c._id);
                                     setReplyText("");
@@ -621,72 +577,53 @@ export default function PostCard({ post, onChange }) {
                                   disabled={loading}
                                 >
                                   Reply
-                                </button>
+                                </LinkButton>
 
-                                <button
+                                <LinkButton
                                   type="button"
                                   onClick={() => toggleReplyLike(c._id, r._id)}
-                                  style={{ fontSize: 12 }}
                                   disabled={loading}
                                 >
                                   {replyLikedByMe ? "Unlike" : "Like"} (
                                   {replyLikes})
-                                </button>
+                                </LinkButton>
 
                                 {isMineReply && (
-                                  <button
+                                  <LinkDanger
                                     type="button"
                                     onClick={() => deleteReply(c._id, r._id)}
-                                    style={{
-                                      fontSize: 12,
-                                      color: "crimson",
-                                    }}
                                     disabled={loading}
                                   >
                                     Delete
-                                  </button>
+                                  </LinkDanger>
                                 )}
-                              </div>
-                            </div>
+                              </ActionsRowSmall>
+                            </ReplyCard>
                           );
                         })}
-                      </div>
+                      </RepliesWrap>
                     )}
 
                     {/* REPLY FORM (under comment) */}
                     {replyOpenForId === c._id && (
-                      <div
-                        style={{
-                          display: "grid",
-                          gap: 6,
-                          marginTop: 8,
-                          marginLeft: 16,
-                        }}
-                      >
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <input
+                      <ReplyForm>
+                        <CommentRow>
+                          <TextInput
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             placeholder="Write a reply..."
-                            style={{ flex: 1 }}
                           />
-                          <button
+                          <PrimaryButton
                             type="button"
                             onClick={() => submitReply(c._id)}
                             disabled={loading}
                           >
                             Send
-                          </button>
-                        </div>
+                          </PrimaryButton>
+                        </CommentRow>
 
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 8,
-                            alignItems: "center",
-                          }}
-                        >
-                          <input
+                        <FileRow>
+                          <FileInput
                             type="file"
                             accept="image/*"
                             onChange={(e) =>
@@ -694,64 +631,61 @@ export default function PostCard({ post, onChange }) {
                             }
                           />
                           {replyImageFile && (
-                            <button
+                            <Button
                               type="button"
                               onClick={() => setReplyImageFile(null)}
                               disabled={loading}
                             >
                               Remove image
-                            </button>
+                            </Button>
                           )}
-                        </div>
-                      </div>
+                        </FileRow>
+                      </ReplyForm>
                     )}
-                  </div>
+                  </CommentCard>
                 );
               })}
 
               {(post.comments || []).length === 0 && (
-                <div style={{ fontSize: 13, opacity: 0.7 }}>No comments yet</div>
+                <EmptyText>No comments yet</EmptyText>
               )}
-            </div>
-          </div>
+            </CommentsGrid>
+          </CommentsWrap>
         </>
       )}
 
       {/* ================= EDIT MODE ================= */}
       {isEditing && (
         <>
-          <textarea
+          <TextArea
             rows={4}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            style={{ width: "100%" }}
           />
 
           {/* CURRENT IMAGE */}
           {post.imageUrl && !removeImage && (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Current image</div>
-              <Image
+            <EditBlock>
+              <SmallLabel>Current image</SmallLabel>
+              <MediaImage
                 src={post.imageUrl}
                 alt=""
                 width={800}
                 height={450}
-                style={{ width: "100%", height: "auto", borderRadius: 10 }}
               />
-              <button
+              <Button
                 type="button"
                 onClick={() => setRemoveImage(true)}
                 disabled={loading}
-                style={{ marginTop: 6 }}
               >
                 Remove image
-              </button>
-            </div>
+              </Button>
+            </EditBlock>
           )}
 
-          <div style={{ marginTop: 8 }}>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>New image</div>
-            <input
+          <EditBlock>
+            <SmallLabel>New image</SmallLabel>
+            <FileInput
               type="file"
               accept="image/*"
               onChange={(e) => {
@@ -759,31 +693,26 @@ export default function PostCard({ post, onChange }) {
                 setRemoveImage(false);
               }}
             />
-          </div>
+          </EditBlock>
 
           {/* CURRENT VIDEO */}
           {post.videoUrl && !removeVideo && (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Current video</div>
-              <video
-                src={post.videoUrl}
-                controls
-                style={{ width: "100%", borderRadius: 10 }}
-              />
-              <button
+            <EditBlock>
+              <SmallLabel>Current video</SmallLabel>
+              <MediaVideo src={post.videoUrl} controls />
+              <Button
                 type="button"
                 onClick={() => setRemoveVideo(true)}
                 disabled={loading}
-                style={{ marginTop: 6 }}
               >
                 Remove video
-              </button>
-            </div>
+              </Button>
+            </EditBlock>
           )}
 
-          <div style={{ marginTop: 8 }}>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>New video</div>
-            <input
+          <EditBlock>
+            <SmallLabel>New video</SmallLabel>
+            <FileInput
               type="file"
               accept="video/*"
               onChange={(e) => {
@@ -791,20 +720,342 @@ export default function PostCard({ post, onChange }) {
                 setRemoveVideo(false);
               }}
             />
-          </div>
+          </EditBlock>
 
           {/* SAVE / CANCEL */}
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <button type="button" onClick={save} disabled={loading}>
+          <ActionsRow>
+            <PrimaryButton type="button" onClick={save} disabled={loading}>
               Save changes
-            </button>
+            </PrimaryButton>
 
-            <button type="button" onClick={cancelEdit} disabled={loading}>
+            <Button type="button" onClick={cancelEdit} disabled={loading}>
               Cancel
-            </button>
-          </div>
+            </Button>
+          </ActionsRow>
         </>
       )}
-    </div>
+    </Card>
   );
 }
+
+/* ===================== styles ===================== */
+
+const Card = styled.div`
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+
+  --font-sm: 12px;
+  --font-md: 14px;
+
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  border: 1px solid var(--color-border);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+
+  @media (max-width: 520px) {
+    padding: var(--space-sm);
+  }
+`;
+
+const TopMeta = styled.div`
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  opacity: 0.85;
+  margin-bottom: var(--space-sm);
+`;
+
+const SmallMuted = styled.small`
+  display: block;
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  opacity: 0.85;
+`;
+
+const AuthorLine = styled.div`
+  margin-top: var(--space-xs);
+  font-size: var(--font-sm);
+  opacity: 0.85;
+`;
+
+const Body = styled.p`
+  margin: var(--space-sm) 0 0;
+  font-size: var(--font-md);
+  line-height: 1.5;
+  word-break: break-word;
+`;
+
+const MediaImage = styled(Image)`
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: var(--space-sm);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.04);
+  max-height: 520px;
+  object-fit: contain;
+`;
+
+const MediaVideo = styled.video`
+  width: 100%;
+  display: block;
+  margin-top: var(--space-sm);
+  border-radius: var(--radius-md);
+`;
+
+const ActionsRow = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+`;
+
+const ActionsRowSmall = styled.div`
+  display: flex;
+  gap: 10px;
+  margin-top: var(--space-sm);
+  flex-wrap: wrap;
+`;
+
+const BaseButton = styled.button`
+  appearance: none;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text);
+  font-weight: 700;
+  font-size: var(--font-sm);
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const Button = styled(BaseButton)`
+  background: rgba(17, 24, 39, 0.02);
+
+  &:hover:not(:disabled) {
+    background: rgba(17, 24, 39, 0.05);
+  }
+`;
+
+const PrimaryButton = styled(BaseButton)`
+  border-color: rgba(79, 70, 229, 0.25);
+  background: rgba(79, 70, 229, 0.10);
+  color: var(--color-primary);
+
+  &:hover:not(:disabled) {
+    background: rgba(79, 70, 229, 0.14);
+    border-color: rgba(79, 70, 229, 0.35);
+  }
+`;
+
+const DangerButton = styled(BaseButton)`
+  border-color: rgba(220, 38, 38, 0.25);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--color-danger);
+
+  &:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.14);
+    border-color: rgba(220, 38, 38, 0.35);
+    color: var(--color-danger-hover);
+  }
+`;
+
+const LinkButton = styled.button`
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: var(--font-sm);
+  color: var(--color-primary);
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const LinkDanger = styled(LinkButton)`
+  color: var(--color-danger);
+`;
+
+const CommentBox = styled.div`
+  display: grid;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+`;
+
+const CommentRow = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  @media (max-width: 520px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+const TextInput = styled.input`
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+
+  &:focus {
+    outline: none;
+    border-color: rgba(79, 70, 229, 0.35);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+`;
+
+const FileRow = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
+const FileInput = styled.input`
+  font-size: var(--font-sm);
+`;
+
+const CommentsWrap = styled.div`
+  margin-top: var(--space-lg);
+`;
+
+const CommentsTitle = styled.strong`
+  display: block;
+  font-size: 13px;
+`;
+
+const CommentsGrid = styled.div`
+  display: grid;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+`;
+
+const CommentCard = styled.div`
+  padding: var(--space-sm);
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  border-radius: var(--radius-sm);
+  background: rgba(17, 24, 39, 0.01);
+`;
+
+const UserLinkRow = styled.div`
+  margin-top: 4px;
+  font-size: var(--font-sm);
+`;
+
+const CommentText = styled.div`
+  margin-top: 6px;
+  font-size: var(--font-md);
+  line-height: 1.45;
+  word-break: break-word;
+`;
+
+const RepliesWrap = styled.div`
+  margin-top: var(--space-sm);
+  margin-left: 16px;
+  display: grid;
+  gap: var(--space-sm);
+`;
+
+const ReplyCard = styled.div`
+  padding: var(--space-sm);
+  border: 1px solid rgba(240, 240, 240, 1);
+  border-radius: var(--radius-sm);
+  background: #fff;
+`;
+
+const ReplyToLine = styled.div`
+  margin-top: 2px;
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  opacity: 0.85;
+`;
+
+const ReplyForm = styled.div`
+  margin-top: var(--space-md);
+  margin-left: 16px;
+  display: grid;
+  gap: var(--space-sm);
+`;
+
+const EmptyText = styled.div`
+  font-size: 13px;
+  color: var(--color-muted);
+  opacity: 0.85;
+`;
+
+const TextArea = styled.textarea`
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(79, 70, 229, 0.35);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+`;
+
+const EditBlock = styled.div`
+  margin-top: var(--space-md);
+  display: grid;
+  gap: 6px;
+`;
+
+const SmallLabel = styled.div`
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  opacity: 0.85;
+`;

@@ -3,6 +3,8 @@ import useSWR from "swr";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import styled from "styled-components";
+import { Heart } from "lucide-react";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -55,25 +57,17 @@ export default function LikesPage() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
-      <h1>Liked content</h1>
+    <Page>
+      <Title>Liked content</Title>
 
       {/* POSTS */}
-      <section style={{ marginTop: 20 }}>
-        <h2>Posts</h2>
+      <Section>
+        <SectionTitle>Posts</SectionTitle>
         {posts.length === 0 && <p>No liked posts</p>}
 
         {posts.map((p) => (
-          <div
-            key={p._id}
-            style={{
-              border: "1px solid #eee",
-              borderRadius: 10,
-              padding: 12,
-              marginTop: 10,
-            }}
-          >
-            <div style={{ fontSize: 12, opacity: 0.7 }}>
+          <Card key={p._id}>
+            <MetaLine>
               {p.gameId?.slug ? (
                 <Link href={`/games/${p.gameId.slug}`}>
                   Open game: {p.gameId.title || p.gameId.slug}
@@ -81,52 +75,31 @@ export default function LikesPage() {
               ) : (
                 <span>(no game)</span>
               )}
-            </div>
+            </MetaLine>
 
-            <div style={{ marginTop: 6 }}>
-              {(p.content || "").slice(0, 200)}
-            </div>
+            <BodyText>{(p.content || "").slice(0, 200)}</BodyText>
 
             {p.imageUrl && (
-              <Image
-                src={p.imageUrl}
-                alt=""
-                width={800}
-                height={450}
-                style={{
-                  width: "100%",
-                  height: "auto",
-                  borderRadius: 10,
-                  marginTop: 8,
-                }}
-              />
+              <CardImage src={p.imageUrl} alt="" width={800} height={450} />
             )}
 
-            <div style={{ marginTop: 10 }}>
-              <button type="button" onClick={() => unlikePost(p._id)}>
+            <Actions>
+              <DangerButton type="button" onClick={() => unlikePost(p._id)}>
                 Unlike
-              </button>
-            </div>
-          </div>
+              </DangerButton>
+            </Actions>
+          </Card>
         ))}
-      </section>
+      </Section>
 
       {/* COMMENTS */}
-      <section style={{ marginTop: 20 }}>
-        <h2>Comments</h2>
+      <Section>
+        <SectionTitle>Comments</SectionTitle>
         {comments.length === 0 && <p>No liked comments</p>}
 
         {comments.map((c) => (
-          <div
-            key={c._id}
-            style={{
-              border: "1px solid #eee",
-              borderRadius: 10,
-              padding: 12,
-              marginTop: 10,
-            }}
-          >
-            <div style={{ fontSize: 12, opacity: 0.7 }}>
+          <Card key={c._id}>
+            <MetaLine>
               {c.game?.slug ? (
                 <Link href={`/games/${c.game.slug}`}>
                   Open game: {c.game.title || c.game.slug}
@@ -134,58 +107,39 @@ export default function LikesPage() {
               ) : (
                 <span>(no game)</span>
               )}
-            </div>
+            </MetaLine>
 
             {/* ссылка */}
-            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+            <MetaLine style={{ marginTop: 6 }}>
               Author: <AuthorLink author={c.author} />
-            </div>
+            </MetaLine>
 
-            <div style={{ marginTop: 6 }}>{c.text}</div>
+            <BodyText>{c.text}</BodyText>
 
             {c.imageUrl && (
-              <Image
-                src={c.imageUrl}
-                alt=""
-                width={800}
-                height={450}
-                style={{
-                  width: "100%",
-                  height: "auto",
-                  borderRadius: 10,
-                  marginTop: 8,
-                }}
-              />
+              <CardImage src={c.imageUrl} alt="" width={800} height={450} />
             )}
 
-            <div style={{ marginTop: 10 }}>
-              <button
+            <Actions>
+              <DangerButton
                 type="button"
                 onClick={() => unlikeComment(c.postId, c._id)}
               >
                 Unlike
-              </button>
-            </div>
-          </div>
+              </DangerButton>
+            </Actions>
+          </Card>
         ))}
-      </section>
+      </Section>
 
       {/* REPLIES */}
-      <section style={{ marginTop: 20 }}>
-        <h2>Replies</h2>
+      <Section>
+        <SectionTitle>Replies</SectionTitle>
         {replies.length === 0 && <p>No liked replies</p>}
 
         {replies.map((r) => (
-          <div
-            key={r._id}
-            style={{
-              border: "1px solid #eee",
-              borderRadius: 10,
-              padding: 12,
-              marginTop: 10,
-            }}
-          >
-            <div style={{ fontSize: 12, opacity: 0.7 }}>
+          <Card key={r._id}>
+            <MetaLine>
               {r.game?.slug ? (
                 <Link href={`/games/${r.game.slug}`}>
                   Open game: {r.game.title || r.game.slug}
@@ -193,41 +147,191 @@ export default function LikesPage() {
               ) : (
                 <span>(no game)</span>
               )}
-            </div>
+            </MetaLine>
 
             {/* ссылка */}
-            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+            <MetaLine style={{ marginTop: 6 }}>
               Author: <AuthorLink author={r.author} />
-            </div>
+            </MetaLine>
 
-            <div style={{ marginTop: 6 }}>{r.text}</div>
+            <BodyText>{r.text}</BodyText>
 
             {r.imageUrl && (
-              <Image
-                src={r.imageUrl}
-                alt=""
-                width={800}
-                height={450}
-                style={{
-                  width: "100%",
-                  height: "auto",
-                  borderRadius: 10,
-                  marginTop: 8,
-                }}
-              />
+              <CardImage src={r.imageUrl} alt="" width={800} height={450} />
             )}
 
-            <div style={{ marginTop: 10 }}>
-              <button
+            <Actions>
+              <DangerButton
                 type="button"
                 onClick={() => unlikeReply(r.postId, r.commentId, r._id)}
               >
                 Unlike
-              </button>
-            </div>
-          </div>
+              </DangerButton>
+            </Actions>
+          </Card>
         ))}
-      </section>
-    </div>
+      </Section>
+    </Page>
   );
 }
+
+/* ===================== styles ===================== */
+
+const Page = styled.div`
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 22px;
+
+  --space-2xs: 4px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 40px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  color: var(--color-text);
+
+  p {
+    margin: var(--space-sm) 0 0;
+    font-size: var(--font-md);
+    line-height: 1.45;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+
+  @media (min-width: 768px) {
+    padding: 18px;
+  }
+`;
+
+const Title = styled.h1`
+  margin-top: 0;
+  margin-bottom: var(--space-2xl);
+  font-size: var(--font-lg);
+  line-height: 1.15;
+  text-align: center;
+
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+`;
+
+const Section = styled.section`
+  max-width: 720px;
+  margin: var(--space-2xl) auto 0;
+  padding-bottom: var(--space-lg);
+`;
+
+const SectionTitle = styled.h2`
+  margin: 0 auto var(--space-lg);
+  font-size: 18px;
+  line-height: 1.2;
+  text-align: center;
+`;
+
+const Card = styled.div`
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: var(--space-md);
+  margin-top: 12px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  /* CENTER the cards (this fixes the "shifted left") */
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
+`;
+
+const MetaLine = styled.div`
+  font-size: var(--font-sm);
+  opacity: 0.85;
+  color: var(--color-muted);
+`;
+
+const BodyText = styled.div`
+  margin-top: var(--space-sm);
+  font-size: var(--font-md);
+  color: var(--color-text);
+  line-height: 1.5;
+  word-break: break-word;
+`;
+
+const CardImage = styled(Image)`
+  width: 100%;
+  height: auto;
+
+  /* bigger but not giant */
+  max-height: 460px;
+  max-width: 560px;
+
+  object-fit: contain;
+  display: block;
+
+  margin: var(--space-md) auto 0;
+  background: rgba(17, 24, 39, 0.04);
+  border-radius: var(--radius-sm);
+`;
+
+const Actions = styled.div`
+  margin-top: var(--space-md);
+  display: flex;
+  justify-content: flex-start;
+`;
+
+const DangerButton = styled.button`
+  appearance: none;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--color-danger);
+  font-weight: 700;
+  font-size: var(--font-md);
+
+  padding: 9px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(220, 38, 38, 0.14);
+    border-color: rgba(220, 38, 38, 0.35);
+    color: var(--color-danger-hover);
+  }
+`;

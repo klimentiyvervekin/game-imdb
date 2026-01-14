@@ -3,6 +3,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import PostList from "./PostList";
 import { useSession } from "next-auth/react";
+import { Heart } from "lucide-react";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 

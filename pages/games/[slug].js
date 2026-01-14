@@ -51,23 +51,20 @@ export default function GamePage() {
       </TopBar>
 
       <Card>
-        {game.coverUrl && (
-          <Cover>
-            <Image
-              src={game.coverUrl}
-              alt={game.title}
-              width={800}
-              height={450}
-              style={{ objectFit: "cover" }}
-            />
-          </Cover>
-        )}
+{game.coverUrl && (
+  <Cover>
+    <Image src={game.coverUrl} alt={game.title} fill priority />
+  </Cover>
+)}
 
-        <Title>{game.title}</Title>
 
-        <div style={{ marginBottom: 12 }}>
-          <button
+        {/* title + follow button in one row */}
+        <TitleRow>
+          <Title>{game.title}</Title>
+
+          <FollowButton
             type="button"
+            aria-pressed={followedGame}
             onClick={() => {
               if (status === "loading") return;
               if (!myUserId) return needLogin();
@@ -76,9 +73,9 @@ export default function GamePage() {
               setFollowedGame(isFollowingGame(game._id));
             }}
           >
-            {followedGame ? "Unfollow game" : "Follow game"}
-          </button>
-        </div>
+            {followedGame ? "Following" : "Follow"}
+          </FollowButton>
+        </TitleRow>
 
         <Meta>
           <li>
@@ -144,10 +141,6 @@ export default function GamePage() {
       <Section>
         <ReviewSection gameId={game._id} />
       </Section>
-
-      <Section>
-        <PostSection gameId={game._id} />
-      </Section>
     </Page>
   );
 }
@@ -156,6 +149,10 @@ const Page = styled.main`
   padding: 16px;
   max-width: 980px;
   margin: 0 auto;
+
+  @media (max-width: 520px) {
+    padding: 12px;
+  }
 `;
 
 const TopBar = styled.div`
@@ -167,16 +164,92 @@ const Card = styled.article`
   border-radius: 10px;
   overflow: hidden;
   padding: 12px;
+
+  @media (max-width: 520px) {
+    padding: 10px;
+  }
 `;
 
 const Cover = styled.div`
-  border-radius: 8px;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9; /* ключ: всегда одинаковый блок без белых полей */
+  border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 12px;
+  background: #11182710; 
+
+  margin-bottom: 18px;
+
+  img {
+    object-fit: cover; /* всегда без белых полей */
+    object-position: center;
+  }
+
+  @media (max-width: 520px) {
+    aspect-ratio: 4 / 3; 
+  }
+`;
+
+const TitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 0 0 12px;
+
+  @media (max-width: 520px) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
 `;
 
 const Title = styled.h1`
-  margin: 0 0 12px 0;
+  margin: 0;
+  line-height: 1.15;
+  font-size: 28px;
+
+  @media (max-width: 520px) {
+    font-size: 22px;
+  }
+`;
+
+const FollowButton = styled.button`
+  appearance: none;
+  border: 1px solid rgba(79, 70, 229, 0.28);
+  background: rgba(79, 70, 229, 0.10);
+  color: #4f46e5;
+  font-weight: 800;
+  font-size: 14px;
+
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+
+  &:hover {
+    background: rgba(79, 70, 229, 0.14);
+    border-color: rgba(79, 70, 229, 0.38);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0px);
+  }
+
+  /* when already following */
+  &[aria-pressed="true"] {
+    border-color: rgba(17, 24, 39, 0.18);
+    background: rgba(17, 24, 39, 0.06);
+    color: #111827;
+  }
+
+  &[aria-pressed="true"]:hover {
+    background: rgba(17, 24, 39, 0.09);
+    border-color: rgba(17, 24, 39, 0.24);
+  }
 `;
 
 const Meta = styled.ul`
@@ -189,10 +262,42 @@ const Section = styled.section`
 `;
 
 const MediaButton = styled.button`
-  margin-top: 16px;
-  padding: 10px 14px;
-  border: 1px solid #ccc;
-  background: #fff;
+  appearance: none;
+  margin-top: 18px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 16px;
+  border-radius: 999px;
+
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  background: rgba(79, 70, 229, 0.08);
+  color: #4f46e5;
+
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  border-radius: 6px;
+  white-space: nowrap;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
+
+  &:hover {
+    background: rgba(79, 70, 229, 0.14);
+    border-color: rgba(79, 70, 229, 0.38);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 520px) {
+    width: 100%;
+    justify-content: center;
+  }
 `;

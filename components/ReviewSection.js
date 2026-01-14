@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import styled from "styled-components";
 import { useSession } from "next-auth/react";
+import { Heart } from "lucide-react";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 минут
 
@@ -492,8 +493,7 @@ export default function ReviewSection({ gameId }) {
                                 type="checkbox"
                                 checked={editUpdateHasSpoilers}
                                 onChange={(e) =>
-                                  setEditUpdateHasSpoilers(e.target.checked)
-                                }
+                                  setEditUpdateHasSpoilers(e.target.checked)}
                               />{" "}
                               This update contains spoilers
                             </label>
@@ -591,141 +591,383 @@ export default function ReviewSection({ gameId }) {
 }
 
 const Wrap = styled.section`
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+
+  --color-warning: #f2b705;
+
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 18px;
+
+  --space-2xs: 4px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text);
+
+  h2 {
+    margin: 0;
+    font-size: var(--font-lg);
+    line-height: 1.2;
+  }
+
+  p {
+    margin: var(--space-xs) 0;
+    font-size: var(--font-md);
+    line-height: 1.4;
+  }
+
+  @media (min-width: 768px) {
+    margin-top: 28px;
+    padding-top: 18px;
+  }
 `;
 
 const Header = styled.div`
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-md);
+
+  @media (min-width: 768px) {
+    gap: var(--space-lg);
+  }
 `;
 
 const Stats = styled.div`
-  opacity: 0.8;
+  opacity: 0.9;
+  color: var(--color-muted);
+  font-size: var(--font-md);
+
+  strong {
+    color: var(--color-text);
+  }
 `;
 
 const Form = styled.form`
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid #eee;
+  margin-top: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  button {
+    appearance: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease;
+  }
+
+  button:hover {
+    background: var(--color-primary-hover);
+  }
+
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const Row = styled.div`
-  margin-bottom: 10px;
+  margin-bottom: var(--space-md);
 
   label {
     display: grid;
-    gap: 6px;
+    gap: var(--space-xs);
+    font-size: var(--font-md);
   }
 
   input,
   textarea {
-    padding: 8px;
-    border: 1px solid #ddd;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    outline: none;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 96px;
+  }
+
+  input:focus,
+  textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  }
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
   }
 `;
 
 const ErrorText = styled.p`
-  margin: 8px 0;
-  color: red;
+  margin: var(--space-sm) 0;
+  color: var(--color-danger);
+  font-size: var(--font-md);
 `;
 
 const List = styled.div`
-  margin-top: 16px;
+  margin-top: var(--space-lg);
   display: grid;
-  gap: 12px;
+  gap: var(--space-lg);
+
+  /* mobile first */
+  grid-template-columns: 1fr;
+
+  /* 2 columns like Metacritic */
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
 `;
 
 const Card = styled.article`
-  padding: 12px;
-  border: 1px solid #eee;
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  /* makes cards look more "grid-friendly" */
+  height: 100%;
+
+  small {
+    color: var(--color-muted);
+  }
+
+  /* edit panels (inline "display: grid") */
+  div[style*="display: grid"] {
+    padding: var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  input,
+  textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    outline: none;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  input:focus,
+  textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  }
+
+  /* default buttons in card */
+  button {
+    appearance: none;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.05s ease;
+  }
+
+  button:hover {
+    border-color: var(--color-primary);
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  /* bigger spacing between "free-standing" buttons (Delete / Add update, etc.) */
+  & > button {
+    margin-top: var(--space-md);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  & > button + button {
+    margin-left: var(--space-md);
+  }
 `;
 
 const Top = styled.div`
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+
+  span {
+    font-weight: 700;
+  }
+
+  small {
+    font-size: var(--font-sm);
+  }
 `;
 
 const Updates = styled.div`
-  margin-top: 10px;
-  padding: 10px;
-  border-left: 3px solid #ddd;
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border-left: 3px solid var(--color-border-strong);
+  background: rgba(17, 24, 39, 0.02);
+  border-radius: var(--radius-sm);
 
   strong {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: var(--space-sm);
   }
 `;
 
 const UpdateItem = styled.div`
-  margin-top: 8px;
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px dashed var(--color-border);
 
   small {
     display: block;
-    opacity: 0.7;
-    margin-bottom: 4px;
+    opacity: 0.9;
+    margin-bottom: var(--space-xs);
+    font-size: var(--font-sm);
   }
 
   p {
-    margin: 4px 0;
+    margin: var(--space-xs) 0;
   }
 
   button {
-    margin-top: 4px;
-    font-size: 12px;
+    margin-top: var(--space-xs);
+    font-size: var(--font-sm);
     background: none;
     border: none;
-    color: red;
+    color: var(--color-danger);
     cursor: pointer;
+    padding: 0;
+    font-weight: 600;
+  }
+
+  button:hover {
+    color: var(--color-danger-hover);
+    text-decoration: underline;
   }
 `;
 
 const UpdateForm = styled.form`
-  margin-top: 10px;
+  margin-top: var(--space-md);
   display: grid;
-  gap: 8px;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
 
   textarea {
-    padding: 8px;
-    border: 1px solid #ddd;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-md);
   }
 
   button {
     width: fit-content;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: var(--color-primary-hover);
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--font-md);
   }
 `;
 
 const VotesRow = styled.div`
-  margin-top: 8px;
+  margin-top: var(--space-md);
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: var(--space-md);
 
   button {
-    padding: 6px 10px;
-    border: 1px solid #ddd;
-    background: #fff;
+    padding: 9px 12px;
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg);
     cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+  }
+
+  button:hover {
+    border-color: var(--color-primary);
   }
 `;
 
 const SpoilerTag = styled.span`
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border: 1px solid #f2b705;
-  border-radius: 999px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  margin-left: var(--space-sm);
+  padding: 2px 10px;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-sm);
+  background: rgba(242, 183, 5, 0.12);
 `;
 
 const Hint = styled.p`
-  margin: 6px 0 0;
-  font-size: 12px;
-  opacity: 0.75;
+  margin: var(--space-xs) 0 0;
+  font-size: var(--font-sm);
+  color: var(--color-muted);
 `;
-
-//
