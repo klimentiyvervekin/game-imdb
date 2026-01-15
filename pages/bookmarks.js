@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
+import styled from "styled-components";
 import {
   getFollowingUsers,
   getFollowingGames,
@@ -60,59 +61,38 @@ export default function FollowingPage() {
   // теперь уже можно делать ранние return
   if (status === "loading") {
     return (
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
-        <h1 style={{ marginTop: 0 }}>Following</h1>
+      <Page>
+        <Title>Following</Title>
         <p>Loading...</p>
-      </div>
+      </Page>
     );
   }
 
   if (!myUserId) {
     return (
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
-        <h1 style={{ marginTop: 0 }}>Following</h1>
+      <Page>
+        <Title>Following</Title>
         <p>Please sign in to see who you follow (users and games).</p>
-      </div>
+      </Page>
     );
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
-      <h1 style={{ marginTop: 0 }}>Following</h1>
+    <Page>
+      <Title>Following</Title>
 
       {/* USERS */}
-      <div style={{ marginTop: 16 }}>
-        <h2 style={{ margin: 0 }}>Users</h2>
+      <Section>
+        <SectionTitle>Users</SectionTitle>
 
-        {userIds.length === 0 && (
-          <p style={{ opacity: 0.7 }}>No followed users</p>
-        )}
+        {userIds.length === 0 && <Muted>No followed users</Muted>}
 
-        <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+        <Grid>
           {userIds.map((id) => {
             const p = getLocalProfile(id);
             return (
-              <div
-                key={id}
-                style={{
-                  border: "1px solid #eee",
-                  borderRadius: 10,
-                  padding: 12,
-                  display: "flex",
-                  gap: 12,
-                  alignItems: "center",
-                }}
-              >
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 999,
-                    overflow: "hidden",
-                    background: "#eee",
-                    flexShrink: 0,
-                  }}
-                >
+              <ItemCard key={id}>
+                <Avatar>
                   {p.avatarUrl ? (
                     <Image
                       src={p.avatarUrl}
@@ -126,73 +106,256 @@ export default function FollowingPage() {
                       }}
                     />
                   ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "grid",
-                        placeItems: "center",
-                        opacity: 0.6,
-                      }}
-                    >
-                      🙂
-                    </div>
+                    <AvatarFallback>🙂</AvatarFallback>
                   )}
-                </div>
+                </Avatar>
 
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700 }}>{p.name || "User"}</div>
-                  <div style={{ fontSize: 12, opacity: 0.6 }}>id: {id}</div>
-                  <Link href={`/users/${id}`}>Open profile</Link>
-                </div>
+                <ItemMain>
+                  <ItemName>{p.name || "User"}</ItemName>
+                  <ItemMeta>id: {id}</ItemMeta>
+                  <StyledLink href={`/users/${id}`}>Open profile</StyledLink>
+                </ItemMain>
 
-                <button type="button" onClick={() => unfollowUser(id)}>
+                <DangerButton type="button" onClick={() => unfollowUser(id)}>
                   Unfollow
-                </button>
-              </div>
+                </DangerButton>
+              </ItemCard>
             );
           })}
-        </div>
-      </div>
+        </Grid>
+      </Section>
 
       {/* GAMES */}
-      <div style={{ marginTop: 24 }}>
-        <h2 style={{ margin: 0 }}>Games</h2>
+      <SectionBig>
+        <SectionTitle>Games</SectionTitle>
 
-        {gameIds.length === 0 && (
-          <p style={{ opacity: 0.7 }}>No followed games</p>
-        )}
+        {gameIds.length === 0 && <Muted>No followed games</Muted>}
         {gameIds.length > 0 && !games && <p>Loading games...</p>}
 
-        <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+        <Grid>
           {followedGames.map((g) => (
-            <div
-              key={g._id}
-              style={{
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 12,
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700 }}>{g.title}</div>
+            <ItemCard key={g._id}>
+              <ItemMain>
+                <ItemName>{g.title}</ItemName>
                 {g.slug ? (
-                  <Link href={`/games/${g.slug}`}>Open game</Link>
+                  <StyledLink href={`/games/${g.slug}`}>Open game</StyledLink>
                 ) : (
-                  <span style={{ opacity: 0.7 }}>(no slug)</span>
+                  <MutedInline>(no slug)</MutedInline>
                 )}
-              </div>
+              </ItemMain>
 
-              <button type="button" onClick={() => unfollowGame(g._id)}>
+              <DangerButton type="button" onClick={() => unfollowGame(g._id)}>
                 Unfollow
-              </button>
-            </div>
+              </DangerButton>
+            </ItemCard>
           ))}
-        </div>
-      </div>
-    </div>
+        </Grid>
+      </SectionBig>
+    </Page>
   );
 }
+
+/* ===================== styles ===================== */
+
+const Page = styled.div`
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 22px;
+
+  --space-2xs: 4px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 40px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  color: var(--color-text);
+  background: transparent;
+
+  p {
+    margin: var(--space-sm) 0 0;
+    font-size: var(--font-md);
+    line-height: 1.4;
+  }
+
+  @media (min-width: 768px) {
+    padding: 18px;
+  }
+`;
+
+const Title = styled.h1`
+  margin: 0 auto var(--space-2xl);
+  font-size: 28px;
+  line-height: 1.15;
+  text-align: center;
+
+  /* shared content width */
+  max-width: 720px;
+`;
+
+const Section = styled.div`
+  /* center the whole block */
+  max-width: 720px;
+  margin: 0 auto;
+
+  /* more air between title and content */
+  padding-bottom: var(--space-2xl);
+`;
+
+const SectionBig = styled.div`
+  max-width: 720px;
+  margin: 0 auto;
+
+  /* extra space between Users and Games blocks */
+  padding-top: var(--space-xl);
+  padding-bottom: var(--space-2xl);
+`;
+
+const SectionTitle = styled.h2`
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+
+  /* center heading */
+  text-align: center;
+
+  /* space between heading and grid */
+  padding-bottom: var(--space-lg);
+`;
+
+const Muted = styled.p`
+  opacity: 0.75;
+  color: var(--color-muted);
+  text-align: center;
+`;
+
+const MutedInline = styled.span`
+  opacity: 0.75;
+  color: var(--color-muted);
+`;
+
+const Grid = styled.div`
+  display: grid;
+  gap: var(--space-md);
+
+  @media (min-width: 768px) {
+    gap: var(--space-md);
+  }
+`;
+
+const ItemCard = styled.div`
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+
+  /* ensure card fills the column nicely */
+  width: 100%;
+
+  @media (max-width: 520px) {
+    padding: var(--space-md);
+  }
+`;
+
+const Avatar = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--color-border);
+  flex-shrink: 0;
+  display: block;
+`;
+
+const AvatarFallback = styled.div`
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  opacity: 0.65;
+  font-size: 18px;
+`;
+
+const ItemMain = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const ItemName = styled.div`
+  font-weight: 800;
+  font-size: var(--font-md);
+  margin-bottom: var(--space-2xs);
+`;
+
+const ItemMeta = styled.div`
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  opacity: 0.9;
+  margin-bottom: var(--space-xs);
+`;
+
+const StyledLink = styled(Link)`
+  display: inline-block;
+  font-size: var(--font-md);
+  color: var(--color-primary);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+`;
+
+const DangerButton = styled.button`
+  appearance: none;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--color-danger);
+  font-weight: 700;
+  font-size: var(--font-md);
+
+  padding: 9px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(220, 38, 38, 0.14);
+    border-color: rgba(220, 38, 38, 0.35);
+    color: var(--color-danger-hover);
+  }
+
+  @media (max-width: 520px) {
+    padding: 8px 10px;
+  }
+`;

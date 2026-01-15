@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { isFollowingUser, toggleFollowUser } from "@/lib/following";
 import { useSession } from "next-auth/react";
+import styled from "styled-components";
 
 const fetcher = async (url) => {
   const res = await fetch(url);
@@ -175,53 +176,32 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
-      <h1 style={{ marginTop: 0 }}>Profile</h1>
+    <Page>
+      <Title>Profile</Title>
 
-      {profileError && (
-        <p style={{ color: "crimson" }}>Failed to load profile</p>
-      )}
-      {!profile && !profileError && <p>Loading profile...</p>}
+      {profileError && <ErrorText>Failed to load profile</ErrorText>}
+      {!profile && !profileError && <MutedText>Loading profile...</MutedText>}
 
       {profile && (
         <>
           {/* header */}
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <div
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 999,
-                overflow: "hidden",
-                background: "#eee",
-              }}
-            >
+          <Header>
+            <AvatarWrap>
               {profile.avatarUrl ? (
-                <Image
+                <AvatarImg
                   src={profile.avatarUrl}
                   alt=""
                   width={80}
                   height={80}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "grid",
-                    placeItems: "center",
-                    opacity: 0.6,
-                  }}
-                >
-                  No photo
-                </div>
+                <AvatarFallback>No photo</AvatarFallback>
               )}
-            </div>
+            </AvatarWrap>
 
             {isMe && (
-              <div style={{ marginTop: 8 }}>
-                <input
+              <AvatarControls>
+                <FileInput
                   type="file"
                   accept="image/*"
                   disabled={avatarUploading}
@@ -241,49 +221,39 @@ export default function UserProfilePage() {
                 />
 
                 {avatarUploading && (
-                  <p style={{ fontSize: 12, opacity: 0.7 }}>
-                    Uploading avatar...
-                  </p>
+                  <SmallMuted>Uploading avatar...</SmallMuted>
                 )}
 
-                {avatarError && (
-                  <p style={{ color: "crimson" }}>{avatarError}</p>
-                )}
-              </div>
+                {avatarError && <ErrorText>{avatarError}</ErrorText>}
+              </AvatarControls>
             )}
 
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 20, fontWeight: 700 }}>
-                {profile.name || "User"}
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.6 }}>id: {userId}</div>
+            <HeaderMain>
+              <NameLine>{profile.name || "User"}</NameLine>
+              <IdLine>id: {userId}</IdLine>
 
-              {profile.bio && (
-                <div style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }}>
-                  {profile.bio}
-                </div>
-              )}
+              {profile.bio && <Bio>{profile.bio}</Bio>}
 
-              <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-                <button
+              <ActionsRow>
+                <TabButton
                   type="button"
                   onClick={() => setTab("posts")}
                   disabled={tab === "posts"}
                 >
                   Posts
-                </button>
-                <button
+                </TabButton>
+                <TabButton
                   type="button"
                   onClick={() => setTab("reviews")}
                   disabled={tab === "reviews"}
                 >
                   Reviews
-                </button>
+                </TabButton>
 
-                <span style={{ flex: 1 }} />
+                <Spacer />
 
                 {!isMe && (
-                  <button
+                  <PrimaryButton
                     type="button"
                     onClick={() => {
                       toggleFollowUser(userId);
@@ -291,59 +261,50 @@ export default function UserProfilePage() {
                     }}
                   >
                     {followed ? "Unfollow" : "Follow"}
-                  </button>
+                  </PrimaryButton>
                 )}
 
                 {/* редактировать можно только свой профиль */}
-                <button
+                <SecondaryButton
                   type="button"
                   onClick={() => setEditMode((v) => !v)}
                   disabled={!isMe}
                   title={!isMe ? "You can edit only your profile" : ""}
                 >
                   {editMode ? "Close edit" : "Edit profile"}
-                </button>
-              </div>
-            </div>
-          </div>
+                </SecondaryButton>
+              </ActionsRow>
+            </HeaderMain>
+          </Header>
 
           {/* Edit profile (server) */}
           {editMode && (
-            <div
-              style={{
-                marginTop: 12,
-                border: "1px solid #ddd",
-                borderRadius: 10,
-                padding: 12,
-              }}
-            >
-              <div style={{ display: "grid", gap: 8 }}>
-                <label>
+            <EditCard>
+              <FormGrid>
+                <Field>
                   Name
-                  <input
+                  <TextInput
                     value={nameDraft}
                     onChange={(e) => setNameDraft(e.target.value)}
-                    style={{ width: "100%", marginTop: 4 }}
                   />
-                </label>
+                </Field>
 
-                <label>
+                <Field>
                   Bio
-                  <textarea
+                  <TextArea
                     rows={3}
                     value={bioDraft}
                     onChange={(e) => setBioDraft(e.target.value)}
-                    style={{ width: "100%", marginTop: 4 }}
                   />
-                </label>
+                </Field>
 
-                {saveError && <p style={{ color: "crimson" }}>{saveError}</p>}
+                {saveError && <ErrorText>{saveError}</ErrorText>}
 
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button type="button" onClick={saveProfile}>
+                <ButtonsRow>
+                  <PrimaryButton type="button" onClick={saveProfile}>
                     Save
-                  </button>
-                  <button
+                  </PrimaryButton>
+                  <SecondaryButton
                     type="button"
                     onClick={() => {
                       setEditMode(false);
@@ -353,38 +314,28 @@ export default function UserProfilePage() {
                     }}
                   >
                     Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
+                  </SecondaryButton>
+                </ButtonsRow>
+              </FormGrid>
+            </EditCard>
           )}
 
           {/* Content */}
-          <div style={{ marginTop: 16 }}>
+          <Content>
             {tab === "posts" && (
               <>
-                <h2 style={{ marginTop: 0 }}>Posts</h2>
+                <SectionTitle>Posts</SectionTitle>
 
-                {postsError && (
-                  <p style={{ color: "crimson" }}>Failed to load posts</p>
-                )}
-                {!posts && !postsError && <p>Loading...</p>}
+                {postsError && <ErrorText>Failed to load posts</ErrorText>}
+                {!posts && !postsError && <MutedText>Loading...</MutedText>}
                 {Array.isArray(posts) && posts.length === 0 && (
-                  <p>No posts yet</p>
+                  <MutedText>No posts yet</MutedText>
                 )}
 
                 {Array.isArray(posts) &&
                   posts.map((p) => (
-                    <div
-                      key={p._id}
-                      style={{
-                        border: "1px solid #eee",
-                        padding: 12,
-                        borderRadius: 10,
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div style={{ fontSize: 12, opacity: 0.7 }}>
+                    <ContentCard key={p._id}>
+                      <CardMeta>
                         {new Date(p.createdAt).toLocaleString()}
                         {" • "}
                         {p.gameId?.slug ? (
@@ -394,71 +345,47 @@ export default function UserProfilePage() {
                         ) : (
                           <span>(no game)</span>
                         )}
-                      </div>
+                      </CardMeta>
 
-                      <div style={{ marginTop: 6 }}>{p.content}</div>
+                      <CardText>{p.content}</CardText>
 
                       {p.imageUrl && (
-                        <Image
+                        <MediaImage
                           src={p.imageUrl}
                           alt=""
                           width={800}
                           height={450}
-                          style={{
-                            width: "100%",
-                            height: "auto",
-                            borderRadius: 10,
-                            marginTop: 8,
-                          }}
                         />
                       )}
 
                       {p.videoUrl && (
-                        <video
-                          src={p.videoUrl}
-                          controls
-                          style={{
-                            width: "100%",
-                            borderRadius: 10,
-                            marginTop: 8,
-                          }}
-                        />
+                        <MediaVideo src={p.videoUrl} controls />
                       )}
-                    </div>
+                    </ContentCard>
                   ))}
               </>
             )}
 
             {tab === "reviews" && (
               <>
-                <h2 style={{ marginTop: 0 }}>Reviews</h2>
+                <SectionTitle>Reviews</SectionTitle>
 
-                {reviewsError && (
-                  <p style={{ color: "crimson" }}>Failed to load reviews</p>
-                )}
-                {!reviews && !reviewsError && <p>Loading...</p>}
+                {reviewsError && <ErrorText>Failed to load reviews</ErrorText>}
+                {!reviews && !reviewsError && <MutedText>Loading...</MutedText>}
                 {Array.isArray(reviews) && reviews.length === 0 && (
-                  <p>No reviews yet</p>
+                  <MutedText>No reviews yet</MutedText>
                 )}
 
                 {Array.isArray(reviews) &&
                   reviews.map((r) => (
-                    <div
-                      key={r._id}
-                      style={{
-                        border: "1px solid #eee",
-                        padding: 12,
-                        borderRadius: 10,
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div style={{ fontSize: 12, opacity: 0.7 }}>
+                    <ContentCard key={r._id}>
+                      <CardMeta>
                         {new Date(r.createdAt).toLocaleString()} • rating:{" "}
                         {r.rating}/10
                         {r.hasSpoilers && <span> • ⚠️ Spoilers</span>}
-                      </div>
+                      </CardMeta>
 
-                      <div style={{ marginTop: 6 }}>
+                      <CardMeta style={{ marginTop: 6 }}>
                         {r.gameId?.slug ? (
                           <Link href={`/games/${r.gameId.slug}`}>
                             Game: {r.gameId.title || r.gameId.slug}
@@ -466,45 +393,482 @@ export default function UserProfilePage() {
                         ) : (
                           <span>Game: (unknown)</span>
                         )}
-                      </div>
+                      </CardMeta>
 
-                      <div style={{ marginTop: 8 }}>{r.text}</div>
+                      <CardText style={{ marginTop: 8 }}>{r.text}</CardText>
 
                       {Array.isArray(r.updates) && r.updates.length > 0 && (
-                        <div
-                          style={{
-                            marginTop: 10,
-                            paddingTop: 10,
-                            borderTop: "1px solid #f0f0f0",
-                          }}
-                        >
-                          <strong style={{ fontSize: 13 }}>Updates</strong>
+                        <Updates>
+                          <UpdatesTitle>Updates</UpdatesTitle>
 
-                          <div
-                            style={{ display: "grid", gap: 8, marginTop: 6 }}
-                          >
+                          <UpdatesGrid>
                             {r.updates.map((u, i) => (
-                              <div
-                                key={u.createdAt + i}
-                                style={{ fontSize: 13 }}
-                              >
-                                <div style={{ fontSize: 12, opacity: 0.7 }}>
+                              <UpdateCard key={u.createdAt + i}>
+                                <SmallMuted>
                                   {new Date(u.createdAt).toLocaleString()}
                                   {u.hasSpoilers && <span> • ⚠️ Spoilers</span>}
-                                </div>
-                                <div style={{ marginTop: 4 }}>{u.text}</div>
-                              </div>
+                                </SmallMuted>
+                                <UpdateText>{u.text}</UpdateText>
+                              </UpdateCard>
                             ))}
-                          </div>
-                        </div>
+                          </UpdatesGrid>
+                        </Updates>
                       )}
-                    </div>
+                    </ContentCard>
                   ))}
               </>
             )}
-          </div>
+          </Content>
         </>
       )}
-    </div>
+    </Page>
   );
 }
+
+/* ===================== styles ===================== */
+
+const Page = styled.div`
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+
+  --color-danger: #dc2626;
+
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 28px;
+  --font-xl: 18px;
+
+  --space-2xs: 4px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 40px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  color: var(--color-text);
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+
+  @media (min-width: 768px) {
+    padding: 18px;
+  }
+`;
+
+const Title = styled.h1`
+  margin: 0 auto var(--space-xl);
+  max-width: 720px;
+  text-align: center;
+  font-size: var(--font-lg);
+  line-height: 1.1;
+`;
+
+const Header = styled.div`
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  gap: var(--space-lg);
+  align-items: center;
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  @media (max-width: 520px) {
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+  }
+`;
+
+const AvatarWrap = styled.div`
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--color-border);
+  flex-shrink: 0;
+
+  @media (max-width: 520px) {
+    width: 64px;
+    height: 64px;
+  }
+`;
+
+const AvatarImg = styled(Image)`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+`;
+
+const AvatarFallback = styled.div`
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  opacity: 0.7;
+  font-size: var(--font-sm);
+`;
+
+const AvatarControls = styled.div`
+  margin-top: var(--space-sm);
+
+  @media (max-width: 520px) {
+    margin-top: 0;
+  }
+`;
+
+const HeaderMain = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const NameLine = styled.div`
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+`;
+
+const IdLine = styled.div`
+  margin-top: var(--space-2xs);
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  opacity: 0.85;
+  word-break: break-word;
+`;
+
+const Bio = styled.div`
+  margin-top: var(--space-sm);
+  font-size: 13px;
+  opacity: 0.9;
+  line-height: 1.45;
+`;
+
+const ActionsRow = styled.div`
+  margin-top: var(--space-md);
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
+const Spacer = styled.span`
+  flex: 1;
+`;
+
+const BaseButton = styled.button`
+  appearance: none;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text);
+  font-weight: 700;
+  font-size: var(--font-md);
+  padding: 9px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+`;
+
+const TabButton = styled(BaseButton)`
+  background: rgba(17, 24, 39, 0.02);
+
+  &:disabled {
+    opacity: 1;
+    background: rgba(79, 70, 229, 0.08);
+    border-color: rgba(79, 70, 229, 0.18);
+    color: var(--color-primary);
+  }
+`;
+
+const PrimaryButton = styled(BaseButton)`
+  border-color: rgba(79, 70, 229, 0.25);
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--color-primary);
+
+  &:hover:not(:disabled) {
+    background: rgba(79, 70, 229, 0.12);
+    border-color: rgba(79, 70, 229, 0.35);
+  }
+`;
+
+const SecondaryButton = styled(BaseButton)`
+  background: rgba(17, 24, 39, 0.02);
+
+  &:hover:not(:disabled) {
+    background: rgba(17, 24, 39, 0.05);
+  }
+`;
+
+const EditCard = styled.div`
+  max-width: 720px;
+  margin: var(--space-lg) auto 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg);
+
+  @media (max-width: 520px) {
+    padding: var(--space-md);
+  }
+`;
+
+const FormGrid = styled.div`
+  display: grid;
+  gap: var(--space-md);
+`;
+
+const Field = styled.label`
+  display: grid;
+  gap: var(--space-xs);
+  font-size: var(--font-md);
+  font-weight: 700;
+`;
+
+const TextInput = styled.input`
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-md);
+`;
+
+const TextArea = styled.textarea`
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-md);
+  resize: vertical;
+`;
+
+const ButtonsRow = styled.div`
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+`;
+
+const Content = styled.div`
+  max-width: 720px;
+  margin: var(--space-xl) auto 0;
+`;
+
+const SectionTitle = styled.h2`
+  margin: 0 0 var(--space-md);
+  text-align: center;
+  font-size: var(--font-xl);
+  line-height: 1.2;
+`;
+
+const ContentCard = styled.div`
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+
+  @media (max-width: 520px) {
+    padding: var(--space-md);
+  }
+`;
+
+const CardMeta = styled.div`
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  opacity: 0.9;
+  line-height: 1.35;
+  word-break: break-word;
+`;
+
+const CardText = styled.div`
+  margin-top: var(--space-sm);
+  font-size: var(--font-md);
+  line-height: 1.5;
+  word-break: break-word;
+`;
+
+const MediaImage = styled(Image)`
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.04);
+
+  /* not giant */
+  max-height: 520px;
+  object-fit: contain;
+`;
+
+const MediaVideo = styled.video`
+  width: 100%;
+  display: block;
+  margin-top: var(--space-md);
+  border-radius: var(--radius-md);
+`;
+
+const Updates = styled.div`
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid rgba(229, 231, 235, 0.9);
+`;
+
+const UpdatesTitle = styled.strong`
+  display: block;
+  font-size: 13px;
+  margin-bottom: var(--space-sm);
+`;
+
+const UpdatesGrid = styled.div`
+  display: grid;
+  gap: var(--space-md);
+`;
+
+const UpdateCard = styled.div`
+  font-size: 13px;
+  padding: var(--space-sm);
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  border-radius: var(--radius-sm);
+  background: rgba(17, 24, 39, 0.02);
+`;
+
+const UpdateText = styled.div`
+  margin-top: var(--space-xs);
+  line-height: 1.45;
+  word-break: break-word;
+`;
+
+const ErrorText = styled.p`
+  margin: var(--space-sm) 0 0;
+  color: crimson;
+  font-size: var(--font-md);
+`;
+
+const MutedText = styled.p`
+  margin: var(--space-sm) 0 0;
+  color: var(--color-muted);
+  opacity: 0.85;
+`;
+
+const SmallMuted = styled.p`
+  margin: var(--space-xs) 0 0;
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  opacity: 0.85;
+`;
+
+const FileInput = styled.input`
+  width: 100%;
+  max-width: 320px;
+
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
+
+  padding: 10px 12px;
+  cursor: pointer;
+
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(17, 24, 39, 0.04);
+    border-color: rgba(79, 70, 229, 0.25);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: rgba(79, 70, 229, 0.35);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* 🔥 button on top */
+  &::file-selector-button {
+    display: block;
+    width: fit-content;
+
+    appearance: none;
+    border: 1px solid rgba(79, 70, 229, 0.25);
+    background: rgba(79, 70, 229, 0.10);
+    color: var(--color-primary);
+
+    font-weight: 800;
+    font-size: var(--font-sm);
+
+    padding: 7px 14px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 6px;
+
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  &::file-selector-button:hover {
+    background: rgba(79, 70, 229, 0.14);
+    border-color: rgba(79, 70, 229, 0.35);
+  }
+
+  /* Safari */
+  &::-webkit-file-upload-button {
+    display: block;
+    width: fit-content;
+
+    appearance: none;
+    border: 1px solid rgba(79, 70, 229, 0.25);
+    background: rgba(79, 70, 229, 0.10);
+    color: var(--color-primary);
+
+    font-weight: 800;
+    font-size: var(--font-sm);
+
+    padding: 7px 14px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 6px;
+
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  &::-webkit-file-upload-button:hover {
+    background: rgba(79, 70, 229, 0.14);
+    border-color: rgba(79, 70, 229, 0.35);
+  }
+`;
