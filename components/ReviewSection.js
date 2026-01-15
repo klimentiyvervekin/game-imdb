@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import styled from "styled-components";
 import { useSession } from "next-auth/react";
-import { Heart } from "lucide-react";
+import Link from "next/link";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 минут
 
@@ -18,7 +18,7 @@ export default function ReviewSection({ gameId }) {
   const { data: session } = useSession(); // хук для авторизации
   const myUserId = session?.user?.dbUserId || null; // user id
 
-  // ✅ MIN: normalize ids (string/ObjectId/populated object)
+  // normalize ids (string/ObjectId/populated object)
   function normId(v) {
     if (!v) return null;
     if (typeof v === "object" && v._id) v = v._id;
@@ -347,7 +347,7 @@ export default function ReviewSection({ gameId }) {
           const reviewAge = now - new Date(r.createdAt).getTime();
           const reviewLeft = EDIT_WINDOW_MS - reviewAge;
 
-          // ✅ MIN: owner check (string-safe)
+          // owner check (string-safe)
           const isOwnerReview =
             myUserId && normId(r.authorId) === normId(myUserId);
 
@@ -356,6 +356,11 @@ export default function ReviewSection({ gameId }) {
           return (
             <Card key={r._id}>
               <Top>
+                <AuthorLine>
+                  <Link href={`/users/${normId(r.authorId)}`}>
+                    Author profile
+                  </Link>
+                </AuthorLine>
                 <span>Rating: {r.rating}/10</span>
                 <small>{new Date(r.createdAt).toLocaleDateString()}</small>
                 {r.hasSpoilers && <SpoilerTag>⚠️ Spoilers</SpoilerTag>}
@@ -437,7 +442,7 @@ export default function ReviewSection({ gameId }) {
                 </button>
               </VotesRow>
 
-              {/* ✅ MIN: DELETE only for owner */}
+              {/* DELETE only for owner */}
               {isOwnerReview && (
                 <button type="button" onClick={() => handleDelete(r._id)}>
                   Delete
@@ -455,7 +460,7 @@ export default function ReviewSection({ gameId }) {
                     const updateAge = now - new Date(u.createdAt).getTime();
                     const updateLeft = EDIT_WINDOW_MS - updateAge;
 
-                    // ✅ MIN: owner check for update
+                    // owner check for update
                     const isOwnerUpdate =
                       myUserId && normId(u.authorId) === normId(myUserId);
 
@@ -464,6 +469,11 @@ export default function ReviewSection({ gameId }) {
                     return (
                       <UpdateItem key={u.createdAt + i}>
                         <small>
+                          <AuthorLine>
+                            <Link href={`/users/${normId(u.authorId)}`}>
+                              Author profile
+                            </Link>
+                          </AuthorLine>
                           {new Date(u.createdAt).toLocaleDateString()}
                           {u.hasSpoilers && (
                             <SpoilerTag>⚠️ Spoilers</SpoilerTag>
@@ -507,7 +517,8 @@ export default function ReviewSection({ gameId }) {
                                 type="checkbox"
                                 checked={editUpdateHasSpoilers}
                                 onChange={(e) =>
-                                  setEditUpdateHasSpoilers(e.target.checked)}
+                                  setEditUpdateHasSpoilers(e.target.checked)
+                                }
                               />{" "}
                               This update contains spoilers
                             </label>
@@ -545,7 +556,7 @@ export default function ReviewSection({ gameId }) {
                           </button>
                         </VotesRow>
 
-                        {/* ✅ MIN: DELETE update only for owner */}
+                        {/* DELETE update only for owner */}
                         {isOwnerUpdate && (
                           <button
                             type="button"
@@ -560,7 +571,7 @@ export default function ReviewSection({ gameId }) {
                 </Updates>
               )}
 
-              {/* ✅ MIN: "Add update" only for owner + logged in */}
+              {/* add update only for owner and logged in */}
               {isOwnerReview && (
                 <button
                   type="button"
@@ -568,7 +579,9 @@ export default function ReviewSection({ gameId }) {
                     if (!myUserId) return needLogin();
                     setUpdateError("");
                     setUpdateText("");
-                    setOpenUpdateForId(openUpdateForId === r._id ? null : r._id);
+                    setOpenUpdateForId(
+                      openUpdateForId === r._id ? null : r._id
+                    );
                   }}
                 >
                   Add update
@@ -607,7 +620,6 @@ export default function ReviewSection({ gameId }) {
     </Wrap>
   );
 }
-
 
 const Wrap = styled.section`
   --color-bg: #ffffff;
@@ -839,7 +851,7 @@ const Card = styled.article`
     transform: translateY(1px);
   }
 
-  /* bigger spacing between "free-standing" buttons (Delete / Add update, etc.) */
+  /* bigger spacing between "free-standing" buttons (delete/ add update, etc) */
   & > button {
     margin-top: var(--space-md);
     display: inline-flex;
@@ -989,4 +1001,18 @@ const Hint = styled.p`
   margin: var(--space-xs) 0 0;
   font-size: var(--font-sm);
   color: var(--color-muted);
+`;
+
+const AuthorLine = styled.div`
+  margin: 6px 0 8px;
+  font-size: 13px;
+
+  a {
+    color: #4642d0ff;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
 `;

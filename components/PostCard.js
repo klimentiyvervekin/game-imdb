@@ -97,7 +97,9 @@ export default function PostCard({ post, onChange }) {
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/posts/${post._id}/like`, { method: "POST" });
+      const res = await fetch(`/api/posts/${post._id}/like`, {
+        method: "POST",
+      });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) return alert(json?.error || "Failed to like");
       onChange?.();
@@ -375,12 +377,7 @@ export default function PostCard({ post, onChange }) {
           <Body>{post.content}</Body>
 
           {post.imageUrl && (
-            <MediaImage
-              src={post.imageUrl}
-              alt=""
-              width={800}
-              height={450}
-            />
+            <MediaImage src={post.imageUrl} alt="" width={800} height={450} />
           )}
 
           {post.videoUrl && <MediaVideo src={post.videoUrl} controls />}
@@ -466,11 +463,13 @@ export default function PostCard({ post, onChange }) {
                 return (
                   <CommentCard key={c._id}>
                     <SmallMuted>
-                      {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
+                      {c.createdAt
+                        ? new Date(c.createdAt).toLocaleString()
+                        : ""}
                     </SmallMuted>
 
                     <UserLinkRow>
-                      <Link href={`/users/${c.authorId}`}>user</Link>
+                      <Link href={`/users/${c.authorId}`}>Author profile</Link>
                     </UserLinkRow>
 
                     <CommentText>{c.text}</CommentText>
@@ -543,6 +542,12 @@ export default function PostCard({ post, onChange }) {
                                   ? new Date(r.createdAt).toLocaleString()
                                   : ""}
                               </SmallMuted>
+
+                              <UserLinkRow>
+                                <Link href={`/users/${r.authorId}`}>
+                                  Author profile
+                                </Link>
+                              </UserLinkRow>
 
                               {r.replyToId && (
                                 <ReplyToLine>
@@ -667,12 +672,7 @@ export default function PostCard({ post, onChange }) {
           {post.imageUrl && !removeImage && (
             <EditBlock>
               <SmallLabel>Current image</SmallLabel>
-              <MediaImage
-                src={post.imageUrl}
-                alt=""
-                width={800}
-                height={450}
-              />
+              <MediaImage src={post.imageUrl} alt="" width={800} height={450} />
               <Button
                 type="button"
                 onClick={() => setRemoveImage(true)}
@@ -877,7 +877,7 @@ const Button = styled(BaseButton)`
 
 const PrimaryButton = styled(BaseButton)`
   border-color: rgba(79, 70, 229, 0.25);
-  background: rgba(79, 70, 229, 0.10);
+  background: rgba(79, 70, 229, 0.1);
   color: var(--color-primary);
 
   &:hover:not(:disabled) {

@@ -1,4 +1,3 @@
-// pages/api/users/[id].js (for local storage for every user, dont need this anymore)
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 
