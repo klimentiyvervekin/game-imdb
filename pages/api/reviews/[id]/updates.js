@@ -5,6 +5,13 @@ import { authOptions } from "../../auth/[...nextauth]";
 import { dbConnect } from "../../../../db/connect";
 import Review from "../../../../db/models/Review";
 
+// ✅ MIN: normalize ids (string/ObjectId/populated object)
+function normId(v) {
+  if (!v) return null;
+  if (typeof v === "object" && v._id) v = v._id;
+  return v.toString();
+}
+
 // backend create update review
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -14,7 +21,7 @@ export default async function handler(req, res) {
   try {
     // только залогиненный пользователь
     const session = await getServerSession(req, res, authOptions);
-    const userId = session?.user?.dbUserId;
+    const userId = normId(session?.user?.dbUserId);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     await dbConnect();
@@ -47,4 +54,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message, name: error.name });
   }
 }
-

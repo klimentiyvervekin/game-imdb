@@ -28,20 +28,14 @@ export default function NavBar() {
             Home
           </NavLink>
 
-          {myUserId ? (
+          {/*  show Profile only when logged in */}
+          {myUserId && (
             <NavLink
               href={`/users/${myUserId}`}
               $active={router.pathname.startsWith("/users")}
             >
               Profile
             </NavLink>
-          ) : (
-            <GhostLinkButton
-              type="button"
-              onClick={() => alert("Please log in to open your profile")}
-            >
-              Profile
-            </GhostLinkButton>
           )}
 
           <NavLink href="/bookmarks" $active={isActive("/bookmarks")}>
@@ -92,21 +86,25 @@ const NavWrap = styled.nav`
 
   padding: 14px 20px;
 
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  @media (max-width: 640px) {
+    padding: 10px 12px;
+    gap: 8px;
+  }
 `;
+
 
 const Left = styled.div`
   display: flex;
   align-items: center;
-  gap: 20px;
-
-  @media (max-width: 640px) {
-    gap: 12px;
-    margin-left: 0;
-  }
+  gap: 12px;
+  min-width: 0; /*  важно чтобы NavCenter мог сжиматься */
 `;
+
 
 const LogoLink = styled(Link)`
   display: inline-flex;
@@ -126,15 +124,31 @@ const LogoLink = styled(Link)`
   img {
     display: block;
   }
+
+  @media (max-width: 640px) {
+    width: 34px;
+    height: 34px;
+  }
 `;
 
 const NavCenter = styled.div`
   display: flex;
+  align-items: center;
   gap: 8px;
+  min-width: 0;
+
+  flex-wrap: nowrap;            /* ✅ не переносить */
+  overflow-x: auto;             /* ✅ если не влазит — скролл */
+  -webkit-overflow-scrolling: touch;
+
+  /* убрать полоску скролла */
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   @media (max-width: 640px) {
-    flex-wrap: wrap;
-    gap: 4px;
+    gap: 6px;
   }
 `;
 
@@ -142,7 +156,14 @@ const Right = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0; /* ✅ чтобы Logout/Login не ужимался в ноль */
+
+  @media (max-width: 640px) {
+    gap: 6px;
+  }
 `;
+
+
 
 const activeStyles = css`
   background: var(--color-primary-soft);
@@ -164,14 +185,16 @@ const NavLink = styled(Link)`
     background: rgba(17, 24, 39, 0.06);
   }
 
-  ${({ $active }) =>
-    $active && activeStyles} // // apply active styles if $active is true
+  ${({ $active }) => $active && activeStyles}
+
+  white-space: nowrap; /* ✅ важно */
 
   @media (max-width: 640px) {
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: 12px;
   }
 `;
+
 
 const EmailText = styled.span`
   font-size: 12px;
@@ -201,7 +224,15 @@ const BaseButton = styled.button`
   &:hover {
     background: #e5e7eb;
   }
+
+  white-space: nowrap;
+
+  @media (max-width: 640px) {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
 `;
+
 
 const PrimaryButton = styled(BaseButton)`
   background: var(--color-primary);
@@ -214,20 +245,3 @@ const PrimaryButton = styled(BaseButton)`
 `;
 
 const ActionButton = styled(BaseButton)``;
-
-const GhostLinkButton = styled.button`
-  appearance: none;
-  background: transparent;
-  border: none;
-
-  padding: 7px 14px;
-  cursor: pointer;
-
-  color: var(--color-text);
-  font-size: 14px;
-  border-radius: 999px;
-
-  &:hover {
-    background: rgba(17, 24, 39, 0.06);
-  }
-`;

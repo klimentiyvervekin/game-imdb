@@ -7,6 +7,13 @@ import Review from "../../../../../db/models/Review";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
+// ✅ MIN: normalize ids (string/ObjectId/populated object)
+function normId(v) {
+  if (!v) return null;
+  if (typeof v === "object" && v._id) v = v._id;
+  return v.toString();
+}
+
 export default async function handler(req, res) {
   const { id, index } = req.query;
   const updateIndex = Number(index);
@@ -22,7 +29,7 @@ export default async function handler(req, res) {
     }
 
     const session = await getServerSession(req, res, authOptions);
-    const userId = session?.user?.dbUserId;
+    const userId = normId(session?.user?.dbUserId);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     await dbConnect();
@@ -33,7 +40,7 @@ export default async function handler(req, res) {
     const upd = review.updates?.[updateIndex];
     if (!upd) return res.status(404).json({ error: "Update not found" });
 
-    const isMine = String(upd.authorId) === String(userId);
+    const isMine = normId(upd.authorId) === userId;
     if (!isMine) return res.status(403).json({ error: "Not allowed" });
 
     if (req.method === "DELETE") {
