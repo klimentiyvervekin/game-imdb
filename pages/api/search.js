@@ -4,10 +4,10 @@ import { authOptions } from "./auth/[...nextauth]";
 
 import { dbConnect } from "../../db/connect";
 import User from "../../db/models/User";
+import Game from "../../db/models/Game";
 
 export default async function handler(req, res) {
   try {
-    // only with login
     const session = await getServerSession(req, res, authOptions);
     const myId = session?.user?.dbUserId;
     if (!myId) return res.status(401).json({ error: "Unauthorized" });
@@ -19,39 +19,22 @@ export default async function handler(req, res) {
     const q = String(req.query.q || "").trim();
     if (!q) return res.status(200).json({ games: [], users: [] });
 
-    // ------===== USERS MongoDB =====-----
     await dbConnect();
-    const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"); // to find everything correctly
 
-    const users = await User.find({
-      $or: [{ name: rx }, { email: rx }],
-    })
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const rx = new RegExp(safe, "i");
+
+    // USERS (MongoDB)
+    const users = await User.find({ name: rx })
       .select("name avatarUrl")
       .limit(8)
       .lean();
-    // 8 users maximal. "lean" for normal js objects
 
-    // ===== GAMES RAWG ========= //
-    const apiKey = process.env.RAWG_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "RAWG_API_KEY is not set" });
-    }
-
-    const url = `https://api.rawg.io/api/games?key=${apiKey}&search=${encodeURIComponent(
-      q
-    )}&page_size=8`;
-
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      return res.status(502).json({ error: "RAWG request failed" });
-    }
-
-    const data = await resp.json();
-    const games = (data?.results || []).map((g) => ({
-      id: g.id,
-      name: g.name,
-      slug: g.slug,
-    }));
+    // GAMES (MongoDB) только те, что реально есть у тебя
+    const games = await Game.find({ title: rx })
+      .select("title slug")
+      .limit(8)
+      .lean();
 
     return res.status(200).json({
       users: users.map((u) => ({
@@ -59,7 +42,11 @@ export default async function handler(req, res) {
         name: u.name || "User",
         avatarUrl: u.avatarUrl || "",
       })),
-      games,
+      games: games.map((g) => ({
+        _id: String(g._id),
+        name: g.title, 
+        slug: g.slug,
+      })),
     });
   } catch (err) {
     console.error("SEARCH API ERROR:", err);

@@ -4,77 +4,91 @@ import { useSession } from "next-auth/react";
 import styled from "styled-components";
 
 export default function SearchBar() {
-  const { data: session, status } = useSession();
-  const myUserId = session?.user?.dbUserId || null;
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.dbUserId || null;
 
-  const [q, setQ] = useState("");
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const [searchResponse, setSearchResponse] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
 
-  async function search(e) {
-    e.preventDefault();
-    setErr("");
+  async function handleSearchSubmit(event) {
+    event.preventDefault();
+    setErrorMessage("");
 
-    if (status === "loading") return;
-    if (!myUserId) {
-      setErr("Please, log in to use search.");
+    if (!currentUserId) {
+      setErrorMessage("Please log in to use search.");
       return;
     }
 
-    const query = q.trim();
-    if (!query) {
-      setData(null);
+    const formData = new FormData(event.target);
+    const searchQuery = String(formData.get("filter") || "").trim();
+
+    if (!searchQuery) {
+      setSearchResponse(null);
+      setHasSearched(false);
       return;
     }
 
-    setLoading(true);
+    setIsLoading(true);
+    setHasSearched(true);
+
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      const json = await res.json();
-      if (!res.ok) {
-        setErr(json?.error || "Search failed");
-        setData(null);
+      const response = await fetch(
+        `/api/search?q=${encodeURIComponent(searchQuery)}`
+      );
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(responseData?.error || "Search failed");
+        setSearchResponse(null);
         return;
       }
-      setData(json);
-    } catch (e2) {
-      setErr(e2.message || "Search failed");
-      setData(null);
+
+      setSearchResponse(responseData);
+      event.target.reset();
+    } catch (error) {
+      setErrorMessage(error.message || "Search failed");
+      setSearchResponse(null);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
-  const users = Array.isArray(data?.users) ? data.users : [];
-  const games = Array.isArray(data?.games) ? data.games : [];
+  const foundUsers = Array.isArray(searchResponse?.users)
+    ? searchResponse.users
+    : [];
+
+  const foundGames = Array.isArray(searchResponse?.games)
+    ? searchResponse.games
+    : [];
 
   return (
     <Wrap>
-      <Form onSubmit={search}>
+      <Form onSubmit={handleSearchSubmit}>
         <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          name="filter"
           placeholder="Search games or users..."
+          autoComplete="off"
         />
-        <SearchButton type="submit" disabled={loading}>
-          {loading ? "Searching..." : "Search"}
+        <SearchButton type="submit" disabled={isLoading}>
+          {isLoading ? "Searching..." : "Search"}
         </SearchButton>
       </Form>
 
-      {err && <ErrorText>{err}</ErrorText>}
+      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}
 
-      {data && (
+      {hasSearched && (
         <Results>
           <Section>
             <strong>Users</strong>
-            {users.length === 0 ? (
+            {foundUsers.length === 0 ? (
               <Empty>No users found</Empty>
             ) : (
               <Links>
-                {users.map((u) => (
-                  <Link key={u._id} href={`/users/${u._id}`}>
-                    {u.name}
+                {foundUsers.map((user) => (
+                  <Link key={user._id} href={`/users/${user._id}`}>
+                    {user.name}
                   </Link>
                 ))}
               </Links>
@@ -83,13 +97,13 @@ export default function SearchBar() {
 
           <Section>
             <strong>Games</strong>
-            {games.length === 0 ? (
+            {foundGames.length === 0 ? (
               <Empty>No games found</Empty>
             ) : (
               <Links>
-                {games.map((g) => (
-                  <Link key={g.id} href={`/games/${g.slug}`}>
-                    {g.name}
+                {foundGames.map((game) => (
+                  <Link key={game.slug} href={`/games/${game.slug}`}>
+                    {game.name}
                   </Link>
                 ))}
               </Links>
@@ -104,38 +118,15 @@ export default function SearchBar() {
 /* ===================== styles ===================== */
 
 const Wrap = styled.div`
-  --color-bg: #ffffff;
-  --color-text: #111827;
-  --color-muted: #6b7280;
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-
-  --color-danger: #dc2626;
-
-  --font-sm: 12px;
-  --font-md: 14px;
-
-  --space-xs: 6px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-pill: 999px;
-
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-lg);
-  background: var(--color-bg);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
 `;
 
 const Form = styled.form`
   display: flex;
-  gap: var(--space-sm);
+  gap: 8px;
   align-items: center;
 
   @media (max-width: 520px) {
@@ -147,31 +138,30 @@ const Form = styled.form`
 const Input = styled.input`
   flex: 1;
   padding: 10px 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-md);
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
   outline: none;
 
   &:focus {
-    border-color: var(--color-primary);
+    border-color: #4f46e5;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
   }
 `;
 
 const SearchButton = styled.button`
-  appearance: none;
   border: 1px solid transparent;
-  background: var(--color-primary);
+  background: #4f46e5;
   color: #fff;
   font-weight: 700;
-  font-size: var(--font-md);
+  font-size: 14px;
   padding: 10px 14px;
-  border-radius: var(--radius-pill);
+  border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
 
   &:hover {
-    background: var(--color-primary-hover);
+    background: #4338ca;
   }
 
   &:disabled {
@@ -185,50 +175,48 @@ const SearchButton = styled.button`
 `;
 
 const ErrorText = styled.p`
-  margin-top: var(--space-sm);
-  color: var(--color-danger);
-  font-size: var(--font-md);
+  margin-top: 8px;
+  color: #dc2626;
+  font-size: 14px;
 `;
 
 const Results = styled.div`
-  margin-top: var(--space-lg);
+  margin-top: 16px;
   display: grid;
-  gap: var(--space-lg);
+  gap: 16px;
 `;
 
 const Section = styled.div`
   strong {
     display: block;
-    margin-bottom: var(--space-xs);
-    font-size: var(--font-md);
+    margin-bottom: 6px;
+    font-size: 14px;
   }
 `;
 
 const Empty = styled.div`
   opacity: 0.7;
-  margin-top: var(--space-xs);
-  font-size: var(--font-md);
-  color: var(--color-muted);
+  margin-top: 6px;
+  font-size: 14px;
+  color: #6b7280;
 `;
 
 const Links = styled.div`
-  margin-top: var(--space-sm);
+  margin-top: 8px;
   display: grid;
-  gap: var(--space-xs);
+  gap: 6px;
 
   a {
     text-decoration: none;
-    color: var(--color-text);
-    font-size: var(--font-md);
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border);
+    color: #111827;
+    font-size: 14px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
     background: #fff;
   }
 
   a:hover {
-    border-color: var(--color-primary);
+    border-color: #4f46e5;
   }
 `;
-
-//
