@@ -14,7 +14,7 @@ export default function NavBar() {
   const isActive = (path) => {
     if (path === "/users" && router.pathname.startsWith("/users")) return true;
     return router.pathname === path;
-  };
+  }; // keeps the Users link active on all /users pages
 
   return (
     <NavWrap>
@@ -164,7 +164,8 @@ const NavLink = styled(Link)`
     background: rgba(17, 24, 39, 0.06);
   }
 
-  ${({ $active }) => $active && activeStyles}
+  ${({ $active }) =>
+    $active && activeStyles} // // apply active styles if $active is true
 
   @media (max-width: 640px) {
     padding: 6px 10px;
