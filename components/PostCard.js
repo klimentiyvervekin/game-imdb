@@ -64,7 +64,7 @@ export default function PostCard({ post, onChange }) {
 
   function needLogin() {
     alert(
-      "Пожалуйста, зарегистрируйтесь или войдите, чтобы писать посты, лайкать и комментировать"
+      "Please, log in or sign in, to write posts, like and comment"
     );
   }
 
