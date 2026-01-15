@@ -477,6 +477,10 @@ const Page = styled.div`
   @media (min-width: 768px) {
     padding: 18px;
   }
+
+  @media (max-width: 520px) {
+    padding: var(--space-md);
+  }
 `;
 
 const Title = styled.h1`
@@ -499,8 +503,11 @@ const Header = styled.div`
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 
-  @media (max-width: 520px) {
-    align-items: flex-start;
+  /* важно: твой "mobile view" шире 520, поэтому ставим выше */
+  @media (max-width: 900px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
     gap: var(--space-md);
     padding: var(--space-md);
   }
@@ -514,9 +521,9 @@ const AvatarWrap = styled.div`
   background: var(--color-border);
   flex-shrink: 0;
 
-  @media (max-width: 520px) {
-    width: 64px;
-    height: 64px;
+  @media (max-width: 900px) {
+    width: 72px;
+    height: 72px;
   }
 `;
 
@@ -539,20 +546,31 @@ const AvatarFallback = styled.div`
 const AvatarControls = styled.div`
   margin-top: var(--space-sm);
 
-  @media (max-width: 520px) {
-    margin-top: 0;
+  @media (max-width: 900px) {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-sm);
   }
 `;
 
 const HeaderMain = styled.div`
   flex: 1;
   min-width: 0;
+
+  @media (max-width: 900px) {
+    width: 100%;
+  }
 `;
 
 const NameLine = styled.div`
   font-size: 20px;
   font-weight: 800;
   line-height: 1.2;
+
+  @media (max-width: 900px) {
+    font-size: 18px;
+  }
 `;
 
 const IdLine = styled.div`
@@ -576,10 +594,26 @@ const ActionsRow = styled.div`
   gap: var(--space-sm);
   align-items: center;
   flex-wrap: wrap;
+
+  @media (max-width: 900px) {
+    width: 100%;
+    justify-content: center;
+
+    /* кнопки ровные и не узкие */
+    & > button {
+      min-width: 140px;
+      justify-content: center;
+    }
+  }
 `;
 
 const Spacer = styled.span`
   flex: 1;
+
+  /* на узких экранах Spacer только мешает */
+  @media (max-width: 900px) {
+    display: none;
+  }
 `;
 
 const BaseButton = styled.button`
@@ -675,6 +709,13 @@ const ButtonsRow = styled.div`
   display: flex;
   gap: var(--space-sm);
   flex-wrap: wrap;
+
+  @media (max-width: 520px) {
+    & > button {
+      flex: 1;
+      min-width: 140px;
+    }
+  }
 `;
 
 const Content = styled.div`
@@ -820,7 +861,7 @@ const FileInput = styled.input`
     cursor: not-allowed;
   }
 
-  /* 🔥 button on top */
+  /* button on top */
   &::file-selector-button {
     display: block;
     width: fit-content;

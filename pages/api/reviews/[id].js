@@ -7,6 +7,13 @@ import Review from "../../../db/models/Review";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
+// ✅ MIN: normalize ids (string/ObjectId/populated object)
+function normId(v) {
+  if (!v) return null;
+  if (typeof v === "object" && v._id) v = v._id;
+  return v.toString();
+}
+
 export default async function handler(req, res) {
   const { id } = req.query;
 
@@ -16,13 +23,13 @@ export default async function handler(req, res) {
     // PATCH и DELETE — только для залогиненных
     if (req.method === "PATCH" || req.method === "DELETE") {
       const session = await getServerSession(req, res, authOptions);
-      const userId = session?.user?.dbUserId;
+      const userId = normId(session?.user?.dbUserId);
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const review = await Review.findById(id);
       if (!review) return res.status(404).json({ error: "Review not found" });
 
-      const isMine = String(review.authorId) === String(userId);
+      const isMine = normId(review.authorId) === userId;
       if (!isMine) return res.status(403).json({ error: "Not allowed" });
 
       // DELETE /api/reviews/:id
@@ -71,4 +78,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message, name: error.name });
   }
 }
-//

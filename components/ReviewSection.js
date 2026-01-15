@@ -18,6 +18,13 @@ export default function ReviewSection({ gameId }) {
   const { data: session } = useSession(); // хук для авторизации
   const myUserId = session?.user?.dbUserId || null; // user id
 
+  // ✅ MIN: normalize ids (string/ObjectId/populated object)
+  function normId(v) {
+    if (!v) return null;
+    if (typeof v === "object" && v._id) v = v._id;
+    return v.toString();
+  }
+
   const {
     data: reviews,
     error,
@@ -340,9 +347,11 @@ export default function ReviewSection({ gameId }) {
           const reviewAge = now - new Date(r.createdAt).getTime();
           const reviewLeft = EDIT_WINDOW_MS - reviewAge;
 
-          // проверяем владение по dbUserId из session
-          const canEditReview =
-            myUserId && r.authorId === myUserId && reviewLeft > 0;
+          // ✅ MIN: owner check (string-safe)
+          const isOwnerReview =
+            myUserId && normId(r.authorId) === normId(myUserId);
+
+          const canEditReview = isOwnerReview && reviewLeft > 0;
 
           return (
             <Card key={r._id}>
@@ -428,10 +437,12 @@ export default function ReviewSection({ gameId }) {
                 </button>
               </VotesRow>
 
-              {/* DELETE */}
-              <button type="button" onClick={() => handleDelete(r._id)}>
-                Delete
-              </button>
+              {/* ✅ MIN: DELETE only for owner */}
+              {isOwnerReview && (
+                <button type="button" onClick={() => handleDelete(r._id)}>
+                  Delete
+                </button>
+              )}
 
               {/* SHOW UPDATES */}
               {Array.isArray(r.updates) && r.updates.length > 0 && (
@@ -444,8 +455,11 @@ export default function ReviewSection({ gameId }) {
                     const updateAge = now - new Date(u.createdAt).getTime();
                     const updateLeft = EDIT_WINDOW_MS - updateAge;
 
-                    const canEditUpdate =
-                      myUserId && u.authorId === myUserId && updateLeft > 0;
+                    // ✅ MIN: owner check for update
+                    const isOwnerUpdate =
+                      myUserId && normId(u.authorId) === normId(myUserId);
+
+                    const canEditUpdate = isOwnerUpdate && updateLeft > 0;
 
                     return (
                       <UpdateItem key={u.createdAt + i}>
@@ -531,31 +545,35 @@ export default function ReviewSection({ gameId }) {
                           </button>
                         </VotesRow>
 
-                        {/* DELETE UPDATE REVIEW BUTTON */}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteUpdate(r._id, i)}
-                        >
-                          Delete update
-                        </button>
+                        {/* ✅ MIN: DELETE update only for owner */}
+                        {isOwnerUpdate && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUpdate(r._id, i)}
+                          >
+                            Delete update
+                          </button>
+                        )}
                       </UpdateItem>
                     );
                   })}
                 </Updates>
               )}
 
-              {/* "OPEN FORM" BUTTON */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!myUserId) return needLogin();
-                  setUpdateError("");
-                  setUpdateText("");
-                  setOpenUpdateForId(openUpdateForId === r._id ? null : r._id);
-                }}
-              >
-                Add update
-              </button>
+              {/* ✅ MIN: "Add update" only for owner + logged in */}
+              {isOwnerReview && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!myUserId) return needLogin();
+                    setUpdateError("");
+                    setUpdateText("");
+                    setOpenUpdateForId(openUpdateForId === r._id ? null : r._id);
+                  }}
+                >
+                  Add update
+                </button>
+              )}
 
               {openUpdateForId === r._id && (
                 <UpdateForm>
@@ -589,6 +607,7 @@ export default function ReviewSection({ gameId }) {
     </Wrap>
   );
 }
+
 
 const Wrap = styled.section`
   --color-bg: #ffffff;
