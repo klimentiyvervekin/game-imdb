@@ -23,7 +23,14 @@ export default function LikesPage() {
     fetcher
   );
 
-  if (status === "loading") return <p>Loading...</p>;
+  if (status === "loading") {
+  return (
+    <StateBlock>
+      <StateTitle>Loading…</StateTitle>
+      <StateText>Please wait</StateText>
+    </StateBlock>
+  );
+}
 
   if (!myUserId) {
     return (
@@ -426,4 +433,28 @@ const EmptyLabel = styled.div`
   font-size: var(--font-md);
   font-weight: 800;
   color: var(--color-text);
+`;
+
+const StateBlock = styled.div`
+  margin: 48px auto 0;
+  padding: 24px 20px;
+  max-width: 420px;
+
+  text-align: center;
+
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
+`;
+
+const StateTitle = styled.div`
+  font-size: var(--font-md);
+  font-weight: 800;
+  color: var(--color-text);
+`;
+
+const StateText = styled.div`
+  margin-top: 6px;
+  font-size: var(--font-sm);
+  color: var(--color-muted);
 `;
