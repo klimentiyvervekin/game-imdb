@@ -28,7 +28,11 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!game?._id) return;
-    setFollowedGame(isFollowingGame(game._id));
+
+    (async () => {
+      const ok = await isFollowingGame(game._id);
+      setFollowedGame(ok);
+    })();
   }, [game?._id]);
 
   function needLogin() {
@@ -51,12 +55,11 @@ export default function GamePage() {
       </TopBar>
 
       <Card>
-{game.coverUrl && (
-  <Cover>
-    <Image src={game.coverUrl} alt={game.title} fill priority />
-  </Cover>
-)}
-
+        {game.coverUrl && (
+          <Cover>
+            <Image src={game.coverUrl} alt={game.title} fill priority />
+          </Cover>
+        )}
 
         {/* title + follow button in one row */}
         <TitleRow>
@@ -65,12 +68,14 @@ export default function GamePage() {
           <FollowButton
             type="button"
             aria-pressed={followedGame}
-            onClick={() => {
+            onClick={async () => {
               if (status === "loading") return;
               if (!myUserId) return needLogin();
 
-              toggleFollowGame(game._id);
-              setFollowedGame(isFollowingGame(game._id));
+              const nextIds = await toggleFollowGame(game._id);
+              setFollowedGame(
+                Array.isArray(nextIds) && nextIds.includes(String(game._id))
+              );
             }}
           >
             {followedGame ? "Following" : "Follow"}
@@ -157,6 +162,43 @@ const Page = styled.main`
 
 const TopBar = styled.div`
   margin-bottom: 12px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 9px 14px;
+    border-radius: 999px;
+
+    border: 1px solid rgba(79, 70, 229, 0.25);
+    background: rgba(79, 70, 229, 0.08);
+    color: #4f46e5;
+
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+  }
+
+  a:hover {
+    background: rgba(79, 70, 229, 0.14);
+    border-color: rgba(79, 70, 229, 0.38);
+    transform: translateY(-1px);
+  }
+
+  a:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 520px) {
+    a {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Card = styled.article`
@@ -176,7 +218,7 @@ const Cover = styled.div`
   aspect-ratio: 16 / 9; /* ключ: всегда одинаковый блок без белых полей */
   border-radius: 10px;
   overflow: hidden;
-  background: #11182710; 
+  background: #11182710;
 
   margin-bottom: 18px;
 
@@ -186,7 +228,7 @@ const Cover = styled.div`
   }
 
   @media (max-width: 520px) {
-    aspect-ratio: 4 / 3; 
+    aspect-ratio: 4 / 3;
   }
 `;
 
