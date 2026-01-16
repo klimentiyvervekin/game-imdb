@@ -39,14 +39,21 @@ export default function FollowingPage() {
   const { data: games } = useSWR(myUserId ? "/api/games" : null, fetcher);
 
   useEffect(() => {
-    // можно грузить даже если не залогинен. это просто localStorage (больше не нужен код)
-    const uids = getFollowingUsers();
-    setUserIds(uids);
-    setGameIds(getFollowingGames());
-
-    // ✅ грузим реальные профили из Mongo через твой API /api/users/[id]
+    // ✅ теперь грузим с сервера (не localStorage), чтобы на любом устройстве было одинаково
     (async () => {
       try {
+        const meRes = await fetch("/api/users/me");
+        if (!meRes.ok) return;
+
+        const me = await meRes.json();
+
+        const uids = Array.isArray(me.followingUsers) ? me.followingUsers : [];
+        const gids = Array.isArray(me.followingGames) ? me.followingGames : [];
+
+        setUserIds(uids);
+        setGameIds(gids);
+
+        // ✅ грузим реальные профили из Mongo через твой API /api/users/[id]
         const entries = await Promise.all(
           uids.map(async (id) => {
             const r = await fetch(`/api/users/${id}`);
@@ -74,21 +81,45 @@ export default function FollowingPage() {
     return games.filter((g) => set.has(String(g._id)));
   }, [games, gameIds]);
 
-  function unfollowUser(id) {
-    const next = toggleFollowUser(id);
-    setUserIds(next);
+  async function unfollowUser(id) {
+    try {
+      const r = await fetch("/api/users/me", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "user", id }),
+      });
+      if (!r.ok) return;
 
-    // ✅ чтобы сразу пропадало имя/аватар
-    setFollowedUsers((prev) => {
-      const copy = { ...prev };
-      delete copy[String(id)];
-      return copy;
-    });
+      const data = await r.json();
+      const next = Array.isArray(data.followingUsers) ? data.followingUsers : [];
+      setUserIds(next);
+
+      // ✅ чтобы сразу пропадало имя/аватар
+      setFollowedUsers((prev) => {
+        const copy = { ...prev };
+        delete copy[String(id)];
+        return copy;
+      });
+    } catch (e) {
+      console.error("unfollow user error:", e);
+    }
   }
 
-  function unfollowGame(id) {
-    const next = toggleFollowGame(id);
-    setGameIds(next);
+  async function unfollowGame(id) {
+    try {
+      const r = await fetch("/api/users/me", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "game", id }),
+      });
+      if (!r.ok) return;
+
+      const data = await r.json();
+      const next = Array.isArray(data.followingGames) ? data.followingGames : [];
+      setGameIds(next);
+    } catch (e) {
+      console.error("unfollow game error:", e);
+    }
   }
 
   // теперь уже можно делать ранние return

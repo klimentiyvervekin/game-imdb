@@ -47,7 +47,11 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     if (!userId) return;
-    setFollowed(isFollowingUser(userId));
+
+    (async () => {
+      const ok = await isFollowingUser(userId);
+      setFollowed(ok);
+    })();
   }, [userId]);
 
   // when profile loaded -> fill drafts
@@ -255,9 +259,12 @@ export default function UserProfilePage() {
                 {!isMe && (
                   <PrimaryButton
                     type="button"
-                    onClick={() => {
-                      toggleFollowUser(userId);
-                      setFollowed(isFollowingUser(userId));
+                    onClick={async () => {
+                      const nextIds = await toggleFollowUser(userId);
+                      setFollowed(
+                        Array.isArray(nextIds) &&
+                          nextIds.includes(String(userId))
+                      );
                     }}
                   >
                     {followed ? "Unfollow" : "Follow"}
@@ -422,6 +429,7 @@ export default function UserProfilePage() {
     </Page>
   );
 }
+
 
 /* ===================== styles ===================== */
 
