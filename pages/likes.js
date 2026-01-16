@@ -26,7 +26,17 @@ export default function LikesPage() {
   if (status === "loading") return <p>Loading...</p>;
 
   if (!myUserId) {
-    return <p>Please log in or sign in to see your likes.</p>;
+    return (
+      <Page>
+        <Title>Liked content</Title>
+
+        <EmptyState>
+          <EmptyIcon>🔒</EmptyIcon>
+          <EmptyTitle>Please sign in</EmptyTitle>
+          <EmptyText>Sign in to see your likes.</EmptyText>
+        </EmptyState>
+      </Page>
+    );
   }
 
   if (error) return <p>Failed to load likes</p>;
@@ -109,7 +119,7 @@ export default function LikesPage() {
               )}
             </MetaLine>
 
-            {/* ссылка */}
+            {/* link */}
             <MetaLine style={{ marginTop: 6 }}>
               Author: <AuthorLink author={c.author} />
             </MetaLine>
@@ -149,7 +159,7 @@ export default function LikesPage() {
               )}
             </MetaLine>
 
-            {/* ссылка */}
+            {/* link */}
             <MetaLine style={{ marginTop: 6 }}>
               Author: <AuthorLink author={r.author} />
             </MetaLine>
@@ -334,4 +344,48 @@ const DangerButton = styled.button`
     border-color: rgba(220, 38, 38, 0.35);
     color: var(--color-danger-hover);
   }
+`;
+
+const EmptyState = styled.div`
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+
+  text-align: center;
+`;
+
+const EmptyIcon = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(79, 70, 229, 0.18);
+
+  display: grid;
+  place-items: center;
+
+  font-size: 18px;
+`;
+
+const EmptyTitle = styled.div`
+  margin-top: var(--space-xs);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+`;
+
+const EmptyText = styled.p`
+  margin: 0;
+  max-width: 520px;
+  color: var(--color-muted);
+  opacity: 0.95;
 `;
