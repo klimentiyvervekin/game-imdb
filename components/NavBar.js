@@ -102,7 +102,7 @@ const Left = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0; /*  важно чтобы NavCenter мог сжиматься */
+  min-width: 0; 
 `;
 
 
@@ -137,8 +137,8 @@ const NavCenter = styled.div`
   gap: 8px;
   min-width: 0;
 
-  flex-wrap: nowrap;            /* ✅ не переносить */
-  overflow-x: auto;             /* ✅ если не влазит — скролл */
+  flex-wrap: nowrap;            
+  overflow-x: auto;             
   -webkit-overflow-scrolling: touch;
 
   /* убрать полоску скролла */
@@ -156,7 +156,7 @@ const Right = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0; /* ✅ чтобы Logout/Login не ужимался в ноль */
+  flex-shrink: 0; 
 
   @media (max-width: 640px) {
     gap: 6px;
@@ -187,7 +187,7 @@ const NavLink = styled(Link)`
 
   ${({ $active }) => $active && activeStyles}
 
-  white-space: nowrap; /* ✅ важно */
+  white-space: nowrap; 
 
   @media (max-width: 640px) {
     padding: 6px 10px;

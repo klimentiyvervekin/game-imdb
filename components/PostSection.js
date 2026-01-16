@@ -1,4 +1,4 @@
-// components/PostSection.js
+// components/PostSection.js DONT NEED THIS ANYMORE
 import { useState } from "react";
 import useSWR from "swr";
 import PostList from "./PostList";

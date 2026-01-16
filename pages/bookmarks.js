@@ -290,12 +290,10 @@ const Title = styled.h1`
   line-height: 1.15;
   text-align: center;
 
-  /* shared content width */
   max-width: 720px;
 `;
 
 const Section = styled.div`
-  /* center the whole block */
   max-width: 720px;
   margin: 0 auto;
 
@@ -307,7 +305,6 @@ const SectionBig = styled.div`
   max-width: 720px;
   margin: 0 auto;
 
-  /* extra space between Users and Games blocks */
   padding-top: var(--space-xl);
   padding-bottom: var(--space-2xl);
 `;
@@ -317,10 +314,8 @@ const SectionTitle = styled.h2`
   font-size: 18px;
   line-height: 1.2;
 
-  /* center heading */
   text-align: center;
 
-  /* space between heading and grid */
   padding-bottom: var(--space-lg);
 `;
 
@@ -355,7 +350,6 @@ const ItemCard = styled.div`
   gap: var(--space-md);
   align-items: center;
 
-  /* ensure card fills the column nicely */
   width: 100%;
 
   @media (max-width: 520px) {

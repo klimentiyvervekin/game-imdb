@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
-const EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 минут
+const EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 const fetcher = async (url) => {
   const res = await fetch(url);
@@ -124,7 +124,6 @@ export default function ReviewSection({ gameId }) {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        // authorId больше не отправляем — сервер должен проверять по session
         text: editUpdateText,
         hasSpoilers: editUpdateHasSpoilers,
       }),
@@ -841,7 +840,6 @@ const Card = styled.article`
     color: var(--color-muted);
   }
 
-  /* edit panels (inline "display: grid") */
   div[style*="display: grid"] {
     padding: var(--space-md);
     border: 1px solid var(--color-border);
@@ -870,7 +868,6 @@ const Card = styled.article`
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
   }
 
-  /* default buttons in card */
   button {
     appearance: none;
     border: 1px solid var(--color-border-strong);
@@ -891,7 +888,6 @@ const Card = styled.article`
     transform: translateY(1px);
   }
 
-  /* bigger spacing between "free-standing" buttons (delete/ add update, etc) */
   & > button {
     margin-top: var(--space-md);
     display: inline-flex;

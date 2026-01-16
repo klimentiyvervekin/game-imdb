@@ -1,4 +1,4 @@
-// pages/api/search.js
+// pages/api/search.js ...........
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       .limit(8)
       .lean();
 
-    // GAMES (MongoDB) только те, что реально есть у тебя
+    // GAMES (MongoDB) только те, что реально есть у меня
     const games = await Game.find({ title: rx })
       .select("title slug")
       .limit(8)

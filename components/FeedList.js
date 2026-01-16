@@ -1,4 +1,4 @@
-// components/FeedList.js
+// components/FeedList.js -----------------------
 import { useState } from "react";
 import styled from "styled-components";
 import GameCard from "./GameCard";
@@ -11,7 +11,7 @@ export default function FeedList({ games = [], posts = [], onPostsChange }) {
   const handlePostsChange =
     typeof onPostsChange === "function" ? onPostsChange : () => {};
 
-  const [mobileTab, setMobileTab] = useState("posts"); // posts | games
+  const [mobileTab, setMobileTab] = useState("posts");
 
   const sortedPosts = [...safePosts].sort(
     (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
@@ -89,7 +89,7 @@ const MobileTabs = styled.div`
 `;
 
 const TabButton = styled.button`
-  flex: 1; /* ВАЖНО: одинаковая ширина */
+  flex: 1; 
   appearance: none;
   border: 1px solid var(--color-border);
   background: #f3f4f6;
@@ -107,7 +107,7 @@ const TabButton = styled.button`
   }
 
   &.active {
-    background: rgba(79, 70, 229, 0.12); /* светло-синий */
+    background: rgba(79, 70, 229, 0.12); 
     color: var(--color-primary);
     border-color: rgba(79, 70, 229, 0.35);
     font-weight: 700;

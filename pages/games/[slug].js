@@ -246,7 +246,7 @@ const Card = styled.article`
 const Cover = styled.div`
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9; /* ключ: всегда одинаковый блок без белых полей */
+  aspect-ratio: 16 / 9; 
   border-radius: 10px;
   overflow: hidden;
   background: #11182710;
@@ -254,7 +254,7 @@ const Cover = styled.div`
   margin-bottom: 18px;
 
   img {
-    object-fit: cover; /* всегда без белых полей */
+    object-fit: cover; 
     object-position: center;
   }
 

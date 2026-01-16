@@ -1,4 +1,4 @@
-// pages/users/[id].js
+// pages/users/[id].js--------------
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";

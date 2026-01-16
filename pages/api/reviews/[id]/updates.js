@@ -5,7 +5,7 @@ import { authOptions } from "../../auth/[...nextauth]";
 import { dbConnect } from "../../../../db/connect";
 import Review from "../../../../db/models/Review";
 
-// ✅ MIN: normalize ids (string/ObjectId/populated object)
+// MIN: normalize ids (string/ObjectId/populated object)
 function normId(v) {
   if (!v) return null;
   if (typeof v === "object" && v._id) v = v._id;

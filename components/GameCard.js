@@ -51,7 +51,6 @@ const Card = styled.article`
   transition: transform 0.12s ease, box-shadow 0.12s ease,
     border-color 0.12s ease;
 
-  /* Next <Image> wraps image in a span — make it full width */
   > span {
     display: block !important;
     width: 100% !important;
@@ -60,7 +59,6 @@ const Card = styled.article`
     background: rgba(17, 24, 39, 0.04);
   }
 
-  /* make the actual img fill the wrapper */
   img {
     display: block;
     width: 100% !important;
@@ -93,10 +91,8 @@ const Title = styled.h3`
   line-height: 1.3;
   color: #111827;
 
-  /* show the name properly under the image */
   word-break: break-word;
 
-  /* максимум 2 строки, чтобы сетка не прыгала */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

@@ -1,4 +1,4 @@
-// pages/games/[slug]/media.js
+// pages/games/[slug]/media.js ---------------
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import useSWR from "swr";

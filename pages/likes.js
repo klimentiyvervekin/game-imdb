@@ -1,4 +1,4 @@
-// pages/likes.js
+// pages/likes.js ------------------
 import useSWR from "swr";
 import Link from "next/link";
 import Image from "next/image";
@@ -290,7 +290,7 @@ const Card = styled.div`
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 
-  /* CENTER the cards (this fixes the "shifted left") */
+  /* CENTER the cards (this fixes the shifted left) */
   max-width: 640px;
   margin-left: auto;
   margin-right: auto;
@@ -318,7 +318,6 @@ const CardImage = styled(Image)`
   width: 100%;
   height: auto;
 
-  /* bigger but not giant */
   max-height: 460px;
   max-width: 560px;
 

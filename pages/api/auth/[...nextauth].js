@@ -16,7 +16,7 @@ export const authOptions = {
 
   callbacks: {
     async jwt({ token, account, profile }) {
-      // 1 в момент логина — создаём/обновляем юзера и кладём mongo _id в token
+      // 1 в момент логина - создаю и обновляю юзера и кладу mongo _id в token
       if (account?.provider === "google" && profile?.email) {
         await dbConnect();
 

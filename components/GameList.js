@@ -1,3 +1,4 @@
+// DONT NEED THIS ANYMORE
 import styled from "styled-components";
 import GameCard from "./GameCard";
 
