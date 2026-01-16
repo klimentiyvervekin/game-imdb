@@ -73,7 +73,11 @@ export default function LikesPage() {
       {/* POSTS */}
       <Section>
         <SectionTitle>Posts</SectionTitle>
-        {posts.length === 0 && <p>No liked posts</p>}
+        {posts.length === 0 && (
+        <EmptyBlock>
+          <EmptyLabel>No liked posts</EmptyLabel>
+        </EmptyBlock>
+      )}
 
         {posts.map((p) => (
           <Card key={p._id}>
@@ -105,7 +109,11 @@ export default function LikesPage() {
       {/* COMMENTS */}
       <Section>
         <SectionTitle>Comments</SectionTitle>
-        {comments.length === 0 && <p>No liked comments</p>}
+                {posts.length === 0 && (
+        <EmptyBlock>
+          <EmptyLabel>No liked comments</EmptyLabel>
+        </EmptyBlock>
+      )}
 
         {comments.map((c) => (
           <Card key={c._id}>
@@ -145,7 +153,11 @@ export default function LikesPage() {
       {/* REPLIES */}
       <Section>
         <SectionTitle>Replies</SectionTitle>
-        {replies.length === 0 && <p>No liked replies</p>}
+                        {posts.length === 0 && (
+        <EmptyBlock>
+          <EmptyLabel>No liked replies</EmptyLabel>
+        </EmptyBlock>
+      )}
 
         {replies.map((r) => (
           <Card key={r._id}>
@@ -384,8 +396,35 @@ const EmptyTitle = styled.div`
 `;
 
 const EmptyText = styled.p`
-  margin: 0;
+  margin: 24px auto 0;
   max-width: 520px;
+
+  padding: 14px 18px;
+  text-align: center;
+
   color: var(--color-muted);
-  opacity: 0.95;
+  font-size: var(--font-md);
+  line-height: 1.4;
+
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
+`;
+
+const EmptyBlock = styled.div`
+  margin: 24px auto 0;
+  padding: 18px 16px;
+  max-width: 520px;
+
+  text-align: center;
+
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
+`;
+
+const EmptyLabel = styled.div`
+  font-size: var(--font-md);
+  font-weight: 800;
+  color: var(--color-text);
 `;

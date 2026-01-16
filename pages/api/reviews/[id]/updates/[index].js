@@ -7,7 +7,7 @@ import Review from "../../../../../db/models/Review";
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
-// ✅ MIN: normalize ids (string/ObjectId/populated object)
+// MIN: normalize ids (string/ObjectId/populated object)
 function normId(v) {
   if (!v) return null;
   if (typeof v === "object" && v._id) v = v._id;

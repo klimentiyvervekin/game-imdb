@@ -476,8 +476,17 @@ const EmptyTitle = styled.div`
 `;
 
 const EmptyText = styled.p`
-  margin: 0;
+  margin: 24px auto 0;
   max-width: 520px;
+
+  padding: 14px 18px;
+  text-align: center;
+
   color: var(--color-muted);
-  opacity: 0.95;
+  font-size: var(--font-md);
+  line-height: 1.4;
+
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
 `;

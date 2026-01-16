@@ -339,9 +339,26 @@ export default function ReviewSection({ gameId }) {
       </Form>
 
       <List>
-        {isLoading && <p>Loading...</p>}
-        {error && <p>Failed to load data</p>}
-        {!isLoading && !error && reviews?.length === 0 && <p>No reviews yet</p>}
+      {isLoading && (
+        <InlineState>
+          <InlineTitle>Loading…</InlineTitle>
+          <InlineText>Reviews are loading</InlineText>
+        </InlineState>
+      )}
+
+      {error && (
+        <InlineState>
+          <InlineTitle>Error</InlineTitle>
+          <InlineText>Failed to load reviews</InlineText>
+        </InlineState>
+      )}
+
+      {!isLoading && !error && reviews?.length === 0 && (
+        <InlineState>
+          <InlineTitle>No reviews yet</InlineTitle>
+          <InlineText>Be the first to write a review</InlineText>
+        </InlineState>
+      )}
 
         {(reviews || []).map((r) => {
           const reviewAge = now - new Date(r.createdAt).getTime();
@@ -797,13 +814,16 @@ const List = styled.div`
   display: grid;
   gap: var(--space-lg);
 
-  /* mobile first */
   grid-template-columns: 1fr;
+
+  justify-items: center;
 
   /* 2 columns like Metacritic */
   @media (min-width: 768px) {
     grid-template-columns: 1fr 1fr;
     align-items: start;
+
+    justify-items: stretch;
   }
 `;
 
@@ -1036,3 +1056,28 @@ const AuthorLine = styled.div`
     text-decoration: underline;
   }
 `;
+
+const InlineState = styled.div`
+  margin: 32px auto 0; 
+  padding: 28px 20px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
+  text-align: center;
+
+  width: 100%;
+  max-width: 520px;
+`;
+
+const InlineTitle = styled.div`
+  font-weight: 800;
+  font-size: var(--font-md);
+  color: var(--color-text);
+`;
+
+const InlineText = styled.div`
+  margin-top: 6px;
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+`;
+

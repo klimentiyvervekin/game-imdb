@@ -1,3 +1,4 @@
+// pages/api/posts/[id]/comments/[commentId]/replies/[replyId].js
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../../../auth/[...nextauth]";
 
