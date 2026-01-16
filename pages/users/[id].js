@@ -272,14 +272,14 @@ export default function UserProfilePage() {
                 )}
 
                 {/* редактировать можно только свой профиль */}
-                <SecondaryButton
-                  type="button"
-                  onClick={() => setEditMode((v) => !v)}
-                  disabled={!isMe}
-                  title={!isMe ? "You can edit only your profile" : ""}
-                >
-                  {editMode ? "Close edit" : "Edit profile"}
-                </SecondaryButton>
+                {isMe && (
+                  <SecondaryButton
+                    type="button"
+                    onClick={() => setEditMode((v) => !v)}
+                  >
+                    {editMode ? "Close edit" : "Edit profile"}
+                  </SecondaryButton>
+                )}
               </ActionsRow>
             </HeaderMain>
           </Header>

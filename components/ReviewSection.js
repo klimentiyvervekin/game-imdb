@@ -32,7 +32,7 @@ export default function ReviewSection({ gameId }) {
     mutate,
   } = useSWR(gameId ? `/api/reviews?gameId=${gameId}` : null, fetcher);
 
-  const [rating, setRating] = useState(8);
+  const [rating, setRating] = useState(10);
   const [text, setText] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -689,12 +689,32 @@ const Header = styled.div`
 `;
 
 const Stats = styled.div`
-  opacity: 0.9;
-  color: var(--color-muted);
-  font-size: var(--font-md);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  color: #fff;
+
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
 
   strong {
-    color: var(--color-text);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 12px;
+    font-size: 13px;
+
+    strong {
+      font-size: 16px;
+    }
   }
 `;
 
