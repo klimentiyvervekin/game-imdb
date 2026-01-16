@@ -509,7 +509,6 @@ const Header = styled.div`
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 
-  /* важно: твой "mobile view" шире 520, поэтому ставим выше */
   @media (max-width: 900px) {
     flex-direction: column;
     align-items: center;

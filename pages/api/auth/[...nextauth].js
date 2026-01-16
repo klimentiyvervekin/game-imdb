@@ -29,7 +29,6 @@ export const authOptions = {
           {
             $set: {
               name,
-              avatarUrl,
               provider: "google",
               providerAccountId: profile.sub || "",
             },
