@@ -47,7 +47,11 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     if (!userId) return;
-    setFollowed(isFollowingUser(userId));
+
+    (async () => {
+      const ok = await isFollowingUser(userId);
+      setFollowed(ok);
+    })();
   }, [userId]);
 
   // when profile loaded -> fill drafts
@@ -255,9 +259,12 @@ export default function UserProfilePage() {
                 {!isMe && (
                   <PrimaryButton
                     type="button"
-                    onClick={() => {
-                      toggleFollowUser(userId);
-                      setFollowed(isFollowingUser(userId));
+                    onClick={async () => {
+                      const nextIds = await toggleFollowUser(userId);
+                      setFollowed(
+                        Array.isArray(nextIds) &&
+                          nextIds.includes(String(userId))
+                      );
                     }}
                   >
                     {followed ? "Unfollow" : "Follow"}
@@ -358,9 +365,7 @@ export default function UserProfilePage() {
                         />
                       )}
 
-                      {p.videoUrl && (
-                        <MediaVideo src={p.videoUrl} controls />
-                      )}
+                      {p.videoUrl && <MediaVideo src={p.videoUrl} controls />}
                     </ContentCard>
                   ))}
               </>
@@ -424,6 +429,7 @@ export default function UserProfilePage() {
     </Page>
   );
 }
+
 
 /* ===================== styles ===================== */
 
@@ -868,7 +874,7 @@ const FileInput = styled.input`
 
     appearance: none;
     border: 1px solid rgba(79, 70, 229, 0.25);
-    background: rgba(79, 70, 229, 0.10);
+    background: rgba(79, 70, 229, 0.1);
     color: var(--color-primary);
 
     font-weight: 800;
@@ -894,7 +900,7 @@ const FileInput = styled.input`
 
     appearance: none;
     border: 1px solid rgba(79, 70, 229, 0.25);
-    background: rgba(79, 70, 229, 0.10);
+    background: rgba(79, 70, 229, 0.1);
     color: var(--color-primary);
 
     font-weight: 800;

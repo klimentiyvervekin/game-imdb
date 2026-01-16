@@ -10,6 +10,9 @@ const UserSchema = new mongoose.Schema(
     avatarUrl: { type: String, default: "" },
     bio: { type: String, default: "" },
 
+    followingUsers: { type: [String], default: [] },
+    followingGames: { type: [String], default: [] },
+
     provider: { type: String, default: "google" },
     providerAccountId: { type: String, default: "" },
   },

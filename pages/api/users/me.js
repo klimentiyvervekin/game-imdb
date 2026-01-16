@@ -18,52 +18,41 @@ export default async function handler(req, res) {
       const user = await User.findById(userId).lean();
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      // отдаём только безопасные поля (как публичный профиль)
       return res.status(200).json({
         _id: String(user._id),
         name: user.name || "User",
         avatarUrl: user.avatarUrl || "",
         bio: user.bio || "",
         email: user.email || "",
+        followingUsers: user.followingUsers || [],
+        followingGames: user.followingGames || [],
       });
     }
 
     // POST /api/users/me
-    // "убедиться что я есть" но БЕЗ upsert без email (иначе 500)
+    // toggle follow: body { kind: "user"|"game", id: "..." }
     if (req.method === "POST") {
-      const email = String(session?.user?.email || "").trim();
-      const name = String(session?.user?.name || "User").trim();
-
-      // если вдруг session без email - не создаём (иначе UserSchema required email даст 500)
-      if (!email) {
-        return res.status(400).json({ error: "Session email is missing" });
+      const { kind, id } = req.body || {};
+      if (!id || (kind !== "user" && kind !== "game")) {
+        return res.status(400).json({ error: "Bad request" });
       }
 
-      // создаём/обновляем безопасно:
-      // - upsert разрешаем, но email кладём в $setOnInsert (обязательно для создания)
-      const user = await User.findOneAndUpdate(
-        { _id: userId },
-        {
-          $set: {
-            ...(name ? { name } : {}),
-          },
-          $setOnInsert: {
-            email, // обязателен при создании
-            name: name || "User",
-            avatarUrl: "",
-            bio: "",
-            provider: "google",
-          },
-        },
-        { new: true, upsert: true }
-      ).lean();
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const field = kind === "user" ? "followingUsers" : "followingGames";
+      const sid = String(id);
+
+      const list = Array.isArray(user[field]) ? user[field].map(String) : [];
+      user[field] = list.includes(sid)
+        ? list.filter((x) => x !== sid)
+        : [...list, sid];
+
+      await user.save();
 
       return res.status(200).json({
-        _id: String(user._id),
-        name: user.name || "User",
-        avatarUrl: user.avatarUrl || "",
-        bio: user.bio || "",
-        email: user.email || "",
+        followingUsers: user.followingUsers || [],
+        followingGames: user.followingGames || [],
       });
     }
 
