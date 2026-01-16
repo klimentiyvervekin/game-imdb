@@ -1,4 +1,4 @@
-// pages/likes.js
+// pages/likes.js ------------------
 import useSWR from "swr";
 import Link from "next/link";
 import Image from "next/image";
@@ -26,7 +26,17 @@ export default function LikesPage() {
   if (status === "loading") return <p>Loading...</p>;
 
   if (!myUserId) {
-    return <p>Please log in or sign in to see your likes.</p>;
+    return (
+      <Page>
+        <Title>Liked content</Title>
+
+        <EmptyState>
+          <EmptyIcon>🔒</EmptyIcon>
+          <EmptyTitle>Please sign in</EmptyTitle>
+          <EmptyText>Sign in to see your likes.</EmptyText>
+        </EmptyState>
+      </Page>
+    );
   }
 
   if (error) return <p>Failed to load likes</p>;
@@ -63,7 +73,11 @@ export default function LikesPage() {
       {/* POSTS */}
       <Section>
         <SectionTitle>Posts</SectionTitle>
-        {posts.length === 0 && <p>No liked posts</p>}
+        {posts.length === 0 && (
+        <EmptyBlock>
+          <EmptyLabel>No liked posts</EmptyLabel>
+        </EmptyBlock>
+      )}
 
         {posts.map((p) => (
           <Card key={p._id}>
@@ -95,7 +109,11 @@ export default function LikesPage() {
       {/* COMMENTS */}
       <Section>
         <SectionTitle>Comments</SectionTitle>
-        {comments.length === 0 && <p>No liked comments</p>}
+                {posts.length === 0 && (
+        <EmptyBlock>
+          <EmptyLabel>No liked comments</EmptyLabel>
+        </EmptyBlock>
+      )}
 
         {comments.map((c) => (
           <Card key={c._id}>
@@ -109,7 +127,7 @@ export default function LikesPage() {
               )}
             </MetaLine>
 
-            {/* ссылка */}
+            {/* link */}
             <MetaLine style={{ marginTop: 6 }}>
               Author: <AuthorLink author={c.author} />
             </MetaLine>
@@ -135,7 +153,11 @@ export default function LikesPage() {
       {/* REPLIES */}
       <Section>
         <SectionTitle>Replies</SectionTitle>
-        {replies.length === 0 && <p>No liked replies</p>}
+                        {posts.length === 0 && (
+        <EmptyBlock>
+          <EmptyLabel>No liked replies</EmptyLabel>
+        </EmptyBlock>
+      )}
 
         {replies.map((r) => (
           <Card key={r._id}>
@@ -149,7 +171,7 @@ export default function LikesPage() {
               )}
             </MetaLine>
 
-            {/* ссылка */}
+            {/* link */}
             <MetaLine style={{ marginTop: 6 }}>
               Author: <AuthorLink author={r.author} />
             </MetaLine>
@@ -268,7 +290,7 @@ const Card = styled.div`
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 
-  /* CENTER the cards (this fixes the "shifted left") */
+  /* CENTER the cards (this fixes the shifted left) */
   max-width: 640px;
   margin-left: auto;
   margin-right: auto;
@@ -296,7 +318,6 @@ const CardImage = styled(Image)`
   width: 100%;
   height: auto;
 
-  /* bigger but not giant */
   max-height: 460px;
   max-width: 560px;
 
@@ -334,4 +355,75 @@ const DangerButton = styled.button`
     border-color: rgba(220, 38, 38, 0.35);
     color: var(--color-danger-hover);
   }
+`;
+
+const EmptyState = styled.div`
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+
+  text-align: center;
+`;
+
+const EmptyIcon = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(79, 70, 229, 0.18);
+
+  display: grid;
+  place-items: center;
+
+  font-size: 18px;
+`;
+
+const EmptyTitle = styled.div`
+  margin-top: var(--space-xs);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+`;
+
+const EmptyText = styled.p`
+  margin: 24px auto 0;
+  max-width: 520px;
+
+  padding: 14px 18px;
+  text-align: center;
+
+  color: var(--color-muted);
+  font-size: var(--font-md);
+  line-height: 1.4;
+
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
+`;
+
+const EmptyBlock = styled.div`
+  margin: 24px auto 0;
+  padding: 18px 16px;
+  max-width: 520px;
+
+  text-align: center;
+
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
+`;
+
+const EmptyLabel = styled.div`
+  font-size: var(--font-md);
+  font-weight: 800;
+  color: var(--color-text);
 `;

@@ -44,7 +44,6 @@ export default function CreatePost({ onCreated }) {
 
     if (status === "loading") return;
 
-    // если не залогинен — не даём отправить
     if (!session?.user?.dbUserId) {
       return setErr("Please log in or sign in to write posts.");
     }
@@ -122,7 +121,7 @@ export default function CreatePost({ onCreated }) {
         />
       </Field>
 
-      {/* uploads row: 2 columns on desktop, 1 column on mobile */}
+      {/* uploads row: 2 columns on desktop,1 column on mobile */}
       <UploadRow>
         <UploadBox>
           <UploadTitle>Image (optional)</UploadTitle>
@@ -314,7 +313,7 @@ const FileInput = styled.input`
     border-color: rgba(79, 70, 229, 0.35);
   }
 
-  /* Safari */
+  /* safari */
   &::-webkit-file-upload-button {
     appearance: none;
     border: 1px solid rgba(79, 70, 229, 0.25);

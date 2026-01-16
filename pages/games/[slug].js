@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import styled from "styled-components";
 import ReviewSection from "../../components/ReviewSection";
-import PostSection from "@/components/PostSection";
 import { isFollowingGame, toggleFollowGame } from "@/lib/following";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -24,21 +23,56 @@ export default function GamePage() {
     isLoading,
   } = useSWR(slug ? `/api/games/${slug}` : null, fetcher);
 
+  // превью медиа (лимит 6) чтобы цифра совпадала с /media
+  const { data: mediaPreview } = useSWR(
+    slug ? `/api/games/${slug}/media?limit=6&videosLimit=6` : null,
+    fetcher
+  );
+
   const [followedGame, setFollowedGame] = useState(false);
 
   useEffect(() => {
     if (!game?._id) return;
-    setFollowedGame(isFollowingGame(game._id));
+
+    (async () => {
+      const ok = await isFollowingGame(game._id);
+      setFollowedGame(ok);
+    })();
   }, [game?._id]);
 
   function needLogin() {
     alert("Please, register or log in to follow games.");
   }
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Failed to load data</p>;
+if (isLoading)
+  return (
+    <StateWrap>
+      <StateCard>
+        <StateTitle>Loading…</StateTitle>
+        <StateText>Please wait while we load the game</StateText>
+      </StateCard>
+    </StateWrap>
+  );
 
-  if (!game || game.error) return <p>Game not found</p>;
+  if (error)
+    return (
+      <StateWrap>
+        <StateCard>
+          <StateTitle>Error</StateTitle>
+          <StateText>Failed to load game data</StateText>
+        </StateCard>
+      </StateWrap>
+    );
+
+  if (!game || game.error)
+    return (
+      <StateWrap>
+        <StateCard>
+          <StateTitle>Not found</StateTitle>
+          <StateText>This game does not exist</StateText>
+        </StateCard>
+      </StateWrap>
+    );
 
   const year = game.releaseDate
     ? new Date(game.releaseDate).getFullYear()
@@ -51,12 +85,11 @@ export default function GamePage() {
       </TopBar>
 
       <Card>
-{game.coverUrl && (
-  <Cover>
-    <Image src={game.coverUrl} alt={game.title} fill priority />
-  </Cover>
-)}
-
+        {game.coverUrl && (
+          <Cover>
+            <Image src={game.coverUrl} alt={game.title} fill priority />
+          </Cover>
+        )}
 
         {/* title + follow button in one row */}
         <TitleRow>
@@ -65,12 +98,14 @@ export default function GamePage() {
           <FollowButton
             type="button"
             aria-pressed={followedGame}
-            onClick={() => {
+            onClick={async () => {
               if (status === "loading") return;
               if (!myUserId) return needLogin();
 
-              toggleFollowGame(game._id);
-              setFollowedGame(isFollowingGame(game._id));
+              const nextIds = await toggleFollowGame(game._id);
+              setFollowedGame(
+                Array.isArray(nextIds) && nextIds.includes(String(game._id))
+              );
             }}
           >
             {followedGame ? "Following" : "Follow"}
@@ -78,13 +113,13 @@ export default function GamePage() {
         </TitleRow>
 
         <Meta>
-          <li>
-            <b>Slug:</b> {game.slug}
-          </li>
-          <li>
+{/*           <li>
+            <b>Full name:</b> {game.slug}
+          </li> */}
+          {/* <li>
             <b>External ID:</b> {game.externalId}
           </li>
-
+ */}
           {year && (
             <li>
               <b>Year:</b> {year}
@@ -116,7 +151,7 @@ export default function GamePage() {
 
           {typeof game.score === "number" && (
             <li>
-              <b>Score:</b> {game.score}
+              <b>Metacritic Score:</b> {game.score}
             </li>
           )}
 
@@ -130,10 +165,10 @@ export default function GamePage() {
         <Link href={`/games/${game.slug}/media`}>
           <MediaButton>
             Photos & Videos
-            {typeof game.screenshotsCount === "number" &&
-              ` (${game.screenshotsCount} photos`}
-            {typeof game.videosCount === "number" &&
-              `, ${game.videosCount} videos`}
+            {typeof mediaPreview?.screenshotsCount === "number" &&
+              ` (${mediaPreview.screenshotsCount} photos`}
+            {typeof mediaPreview?.videosCount === "number" &&
+              `, ${mediaPreview.videosCount} videos`}
           </MediaButton>
         </Link>
       </Card>
@@ -157,9 +192,47 @@ const Page = styled.main`
 
 const TopBar = styled.div`
   margin-bottom: 12px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 9px 14px;
+    border-radius: 999px;
+
+    border: 1px solid rgba(79, 70, 229, 0.25);
+    background: rgba(79, 70, 229, 0.08);
+    color: #4f46e5;
+
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+  }
+
+  a:hover {
+    background: rgba(79, 70, 229, 0.14);
+    border-color: rgba(79, 70, 229, 0.38);
+    transform: translateY(-1px);
+  }
+
+  a:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 520px) {
+    a {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const Card = styled.article`
+  background: #ffffff;
   border: 1px solid #e5e5e5;
   border-radius: 10px;
   overflow: hidden;
@@ -173,20 +246,20 @@ const Card = styled.article`
 const Cover = styled.div`
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9; /* ключ: всегда одинаковый блок без белых полей */
+  aspect-ratio: 16 / 9; 
   border-radius: 10px;
   overflow: hidden;
-  background: #11182710; 
+  background: #11182710;
 
   margin-bottom: 18px;
 
   img {
-    object-fit: cover; /* всегда без белых полей */
+    object-fit: cover; 
     object-position: center;
   }
 
   @media (max-width: 520px) {
-    aspect-ratio: 4 / 3; 
+    aspect-ratio: 4 / 3;
   }
 `;
 
@@ -299,5 +372,51 @@ const MediaButton = styled.button`
   @media (max-width: 520px) {
     width: 100%;
     justify-content: center;
+  }
+`;
+
+const StateWrap = styled.main`
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+`;
+
+const StateCard = styled.div`
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 28px 32px;
+  text-align: center;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+
+  @media (max-width: 520px) {
+    padding: 22px 18px;
+    border-radius: 12px;
+  }
+`;
+
+const StateTitle = styled.h1`
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  color: #111827;
+
+  @media (max-width: 520px) {
+    font-size: 18px;
+  }
+`;
+
+const StateText = styled.p`
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #6b7280;
+
+  @media (max-width: 520px) {
+    font-size: 13px;
   }
 `;

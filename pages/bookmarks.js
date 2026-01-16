@@ -33,13 +33,13 @@ export default function FollowingPage() {
   const [userIds, setUserIds] = useState([]);
   const [gameIds, setGameIds] = useState([]);
 
-  // ✅ добавили: имена/аватары юзеров по id
+  // добавил: имена/аватары юзеров по id
   const [followedUsers, setFollowedUsers] = useState({});
 
   const { data: games } = useSWR(myUserId ? "/api/games" : null, fetcher);
 
   useEffect(() => {
-    // ✅ теперь грузим с сервера (не localStorage), чтобы на любом устройстве было одинаково
+    // теперь грузим с сервера (не localStorage), чтобы на любом устройстве было одинаково
     (async () => {
       try {
         const meRes = await fetch("/api/users/me");
@@ -53,7 +53,7 @@ export default function FollowingPage() {
         setUserIds(uids);
         setGameIds(gids);
 
-        // ✅ грузим реальные профили из Mongo через твой API /api/users/[id]
+        // грузим реальные профили из Mongo через мой API /api/users/[id]
         const entries = await Promise.all(
           uids.map(async (id) => {
             const r = await fetch(`/api/users/${id}`);
@@ -91,10 +91,12 @@ export default function FollowingPage() {
       if (!r.ok) return;
 
       const data = await r.json();
-      const next = Array.isArray(data.followingUsers) ? data.followingUsers : [];
+      const next = Array.isArray(data.followingUsers)
+        ? data.followingUsers
+        : [];
       setUserIds(next);
 
-      // ✅ чтобы сразу пропадало имя/аватар
+      // чтобы сразу пропадало имя/аватар
       setFollowedUsers((prev) => {
         const copy = { ...prev };
         delete copy[String(id)];
@@ -115,7 +117,9 @@ export default function FollowingPage() {
       if (!r.ok) return;
 
       const data = await r.json();
-      const next = Array.isArray(data.followingGames) ? data.followingGames : [];
+      const next = Array.isArray(data.followingGames)
+        ? data.followingGames
+        : [];
       setGameIds(next);
     } catch (e) {
       console.error("unfollow game error:", e);
@@ -136,7 +140,14 @@ export default function FollowingPage() {
     return (
       <Page>
         <Title>Following</Title>
-        <p>Please sign in to see who you follow (users and games).</p>
+
+        <EmptyState>
+          <EmptyIcon>🔒</EmptyIcon>
+          <EmptyTitle>Please sign in</EmptyTitle>
+          <EmptyText>
+            Sign in to see who you follow (users and games).
+          </EmptyText>
+        </EmptyState>
       </Page>
     );
   }
@@ -153,7 +164,7 @@ export default function FollowingPage() {
 
         <Grid>
           {userIds.map((id) => {
-            // ✅ берём реального юзера из API, а localStorage оставили как запасной вариант
+            // берём реального юзера из API, а localStorage оставили как запасной вариант
             const u = followedUsers[String(id)];
             const p = u || getLocalProfile(id);
 
@@ -279,12 +290,10 @@ const Title = styled.h1`
   line-height: 1.15;
   text-align: center;
 
-  /* shared content width */
   max-width: 720px;
 `;
 
 const Section = styled.div`
-  /* center the whole block */
   max-width: 720px;
   margin: 0 auto;
 
@@ -296,7 +305,6 @@ const SectionBig = styled.div`
   max-width: 720px;
   margin: 0 auto;
 
-  /* extra space between Users and Games blocks */
   padding-top: var(--space-xl);
   padding-bottom: var(--space-2xl);
 `;
@@ -306,10 +314,8 @@ const SectionTitle = styled.h2`
   font-size: 18px;
   line-height: 1.2;
 
-  /* center heading */
   text-align: center;
 
-  /* space between heading and grid */
   padding-bottom: var(--space-lg);
 `;
 
@@ -344,7 +350,6 @@ const ItemCard = styled.div`
   gap: var(--space-md);
   align-items: center;
 
-  /* ensure card fills the column nicely */
   width: 100%;
 
   @media (max-width: 520px) {
@@ -425,4 +430,57 @@ const DangerButton = styled.button`
   @media (max-width: 520px) {
     padding: 8px 10px;
   }
+`;
+
+const EmptyState = styled.div`
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+
+  text-align: center;
+`;
+
+const EmptyIcon = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(79, 70, 229, 0.18);
+
+  display: grid;
+  place-items: center;
+
+  font-size: 18px;
+`;
+
+const EmptyTitle = styled.div`
+  margin-top: var(--space-xs);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+`;
+
+const EmptyText = styled.p`
+  margin: 24px auto 0;
+  max-width: 520px;
+
+  padding: 14px 18px;
+  text-align: center;
+
+  color: var(--color-muted);
+  font-size: var(--font-md);
+  line-height: 1.4;
+
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
 `;

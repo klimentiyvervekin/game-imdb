@@ -1,4 +1,4 @@
-// pages/users/[id].js
+// pages/users/[id].js--------------
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -69,7 +69,14 @@ export default function UserProfilePage() {
   const { data: posts, error: postsError } = useSWR(postsKey, fetcher);
   const { data: reviews, error: reviewsError } = useSWR(reviewsKey, fetcher);
 
-  if (!userId) return <p>Loading...</p>;
+  if (!userId) {
+    return (
+      <InlineState>
+        <InlineTitle>Loading…</InlineTitle>
+        <InlineText>Please wait while your profile is loading</InlineText>
+      </InlineState>
+    );
+  }
 
   //--------- 2 helper function for avatar upload -----------//
   function fileToBase64(file) {
@@ -272,14 +279,14 @@ export default function UserProfilePage() {
                 )}
 
                 {/* редактировать можно только свой профиль */}
-                <SecondaryButton
-                  type="button"
-                  onClick={() => setEditMode((v) => !v)}
-                  disabled={!isMe}
-                  title={!isMe ? "You can edit only your profile" : ""}
-                >
-                  {editMode ? "Close edit" : "Edit profile"}
-                </SecondaryButton>
+                {isMe && (
+                  <SecondaryButton
+                    type="button"
+                    onClick={() => setEditMode((v) => !v)}
+                  >
+                    {editMode ? "Close edit" : "Edit profile"}
+                  </SecondaryButton>
+                )}
               </ActionsRow>
             </HeaderMain>
           </Header>
@@ -430,7 +437,6 @@ export default function UserProfilePage() {
   );
 }
 
-
 /* ===================== styles ===================== */
 
 const Page = styled.div`
@@ -509,7 +515,6 @@ const Header = styled.div`
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 
-  /* важно: твой "mobile view" шире 520, поэтому ставим выше */
   @media (max-width: 900px) {
     flex-direction: column;
     align-items: center;
@@ -823,9 +828,19 @@ const ErrorText = styled.p`
 `;
 
 const MutedText = styled.p`
-  margin: var(--space-sm) 0 0;
+  margin: 24px auto 0;
+  max-width: 520px;
+
+  padding: 14px 18px;
+  text-align: center;
+
   color: var(--color-muted);
-  opacity: 0.85;
+  font-size: var(--font-md);
+  line-height: 1.4;
+
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(17, 24, 39, 0.02);
 `;
 
 const SmallMuted = styled.p`
@@ -893,7 +908,6 @@ const FileInput = styled.input`
     border-color: rgba(79, 70, 229, 0.35);
   }
 
-  /* Safari */
   &::-webkit-file-upload-button {
     display: block;
     width: fit-content;
@@ -918,4 +932,28 @@ const FileInput = styled.input`
     background: rgba(79, 70, 229, 0.14);
     border-color: rgba(79, 70, 229, 0.35);
   }
+`;
+
+const InlineState = styled.div`
+  margin: 48px auto;
+  padding: 28px 22px;
+  max-width: 520px;
+
+  border: 1px dashed #e5e7eb;
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.02);
+
+  text-align: center;
+`;
+
+const InlineTitle = styled.div`
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+`;
+
+const InlineText = styled.div`
+  margin-top: 6px;
+  font-size: 13px;
+  color: #6b7280;
 `;
