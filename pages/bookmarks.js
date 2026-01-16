@@ -33,12 +33,38 @@ export default function FollowingPage() {
   const [userIds, setUserIds] = useState([]);
   const [gameIds, setGameIds] = useState([]);
 
+  // ✅ добавили: имена/аватары юзеров по id
+  const [followedUsers, setFollowedUsers] = useState({});
+
   const { data: games } = useSWR(myUserId ? "/api/games" : null, fetcher);
 
   useEffect(() => {
     // можно грузить даже если не залогинен. это просто localStorage (больше не нужен код)
-    setUserIds(getFollowingUsers());
+    const uids = getFollowingUsers();
+    setUserIds(uids);
     setGameIds(getFollowingGames());
+
+    // ✅ грузим реальные профили из Mongo через твой API /api/users/[id]
+    (async () => {
+      try {
+        const entries = await Promise.all(
+          uids.map(async (id) => {
+            const r = await fetch(`/api/users/${id}`);
+            if (!r.ok) return [id, null];
+            const u = await r.json();
+            return [id, u];
+          })
+        );
+
+        const next = {};
+        for (const [id, u] of entries) {
+          if (u) next[String(id)] = u; // {_id, name, avatarUrl, bio}
+        }
+        setFollowedUsers(next);
+      } catch (e) {
+        console.error("load followed users error:", e);
+      }
+    })();
   }, []);
 
   // тоже не нужно
@@ -51,6 +77,13 @@ export default function FollowingPage() {
   function unfollowUser(id) {
     const next = toggleFollowUser(id);
     setUserIds(next);
+
+    // ✅ чтобы сразу пропадало имя/аватар
+    setFollowedUsers((prev) => {
+      const copy = { ...prev };
+      delete copy[String(id)];
+      return copy;
+    });
   }
 
   function unfollowGame(id) {
@@ -89,7 +122,10 @@ export default function FollowingPage() {
 
         <Grid>
           {userIds.map((id) => {
-            const p = getLocalProfile(id);
+            // ✅ берём реального юзера из API, а localStorage оставили как запасной вариант
+            const u = followedUsers[String(id)];
+            const p = u || getLocalProfile(id);
+
             return (
               <ItemCard key={id}>
                 <Avatar>

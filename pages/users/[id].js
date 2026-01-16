@@ -358,9 +358,7 @@ export default function UserProfilePage() {
                         />
                       )}
 
-                      {p.videoUrl && (
-                        <MediaVideo src={p.videoUrl} controls />
-                      )}
+                      {p.videoUrl && <MediaVideo src={p.videoUrl} controls />}
                     </ContentCard>
                   ))}
               </>
@@ -868,7 +866,7 @@ const FileInput = styled.input`
 
     appearance: none;
     border: 1px solid rgba(79, 70, 229, 0.25);
-    background: rgba(79, 70, 229, 0.10);
+    background: rgba(79, 70, 229, 0.1);
     color: var(--color-primary);
 
     font-weight: 800;
@@ -894,7 +892,7 @@ const FileInput = styled.input`
 
     appearance: none;
     border: 1px solid rgba(79, 70, 229, 0.25);
-    background: rgba(79, 70, 229, 0.10);
+    background: rgba(79, 70, 229, 0.1);
     color: var(--color-primary);
 
     font-weight: 800;
