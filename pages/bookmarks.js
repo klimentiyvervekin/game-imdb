@@ -91,7 +91,9 @@ export default function FollowingPage() {
       if (!r.ok) return;
 
       const data = await r.json();
-      const next = Array.isArray(data.followingUsers) ? data.followingUsers : [];
+      const next = Array.isArray(data.followingUsers)
+        ? data.followingUsers
+        : [];
       setUserIds(next);
 
       // ✅ чтобы сразу пропадало имя/аватар
@@ -115,7 +117,9 @@ export default function FollowingPage() {
       if (!r.ok) return;
 
       const data = await r.json();
-      const next = Array.isArray(data.followingGames) ? data.followingGames : [];
+      const next = Array.isArray(data.followingGames)
+        ? data.followingGames
+        : [];
       setGameIds(next);
     } catch (e) {
       console.error("unfollow game error:", e);

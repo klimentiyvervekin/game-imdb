@@ -24,6 +24,12 @@ export default function GamePage() {
     isLoading,
   } = useSWR(slug ? `/api/games/${slug}` : null, fetcher);
 
+  // ✅ добавили: превью медиа (лимит 6) чтобы цифра совпадала с /media
+  const { data: mediaPreview } = useSWR(
+    slug ? `/api/games/${slug}/media?limit=6&videosLimit=6` : null,
+    fetcher
+  );
+
   const [followedGame, setFollowedGame] = useState(false);
 
   useEffect(() => {
@@ -135,10 +141,10 @@ export default function GamePage() {
         <Link href={`/games/${game.slug}/media`}>
           <MediaButton>
             Photos & Videos
-            {typeof game.screenshotsCount === "number" &&
-              ` (${game.screenshotsCount} photos`}
-            {typeof game.videosCount === "number" &&
-              `, ${game.videosCount} videos`}
+            {typeof mediaPreview?.screenshotsCount === "number" &&
+              ` (${mediaPreview.screenshotsCount} photos`}
+            {typeof mediaPreview?.videosCount === "number" &&
+              `, ${mediaPreview.videosCount} videos`}
           </MediaButton>
         </Link>
       </Card>
