@@ -40,17 +40,17 @@ Users can review games, rate them, and create game-related posts with images, vi
 
 ## 🖼 Screenshots
 
-### Home Feed
-<img src="https://github.com/user-attachments/assets/0fa19047-3455-4b22-92f7-6313963c72a4" width="600" />
+### Home Feed (desktop)
+<img src="https://github.com/user-attachments/assets/0fa19047-3455-4b22-92f7-6313963c72a4" width="800" />
 
-### Game Page
-<img src="https://github.com/user-attachments/assets/9fcc9920-2f62-4d9b-911c-f8e7a2196d2f" width="600" />
+### Game Page (desktop)
+<img src="https://github.com/user-attachments/assets/9fcc9920-2f62-4d9b-911c-f8e7a2196d2f" width="800" />
 
-### Review with Spoilers
-<img src="https://github.com/user-attachments/assets/d51147b6-fbe4-41f4-8309-b0562e9b2416" width="500" />
+### Review with Spoilers *(mobile view)*
+<img src="https://github.com/user-attachments/assets/d51147b6-fbe4-41f4-8309-b0562e9b2416" width="420" />
 
-### User Profile
-<img src="https://github.com/user-attachments/assets/0f9584ba-a58c-41d0-9655-423b05657a2c" width="500" />
+### User Profile *(mobile view)*
+<img src="https://github.com/user-attachments/assets/0f9584ba-a58c-41d0-9655-423b05657a2c" width="420" />
 
 ---
 
