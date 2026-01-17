@@ -25,7 +25,7 @@ Users can review games, rate them, and create game-related posts with images, vi
   - Follow users and games
 
 - 👤 **User profiles**
-  - Google-based authentication
+  - Google authentication
   - Avatar upload
   - Personal feed (posts & reviews)
   - Profile editing
@@ -33,24 +33,24 @@ Users can review games, rate them, and create game-related posts with images, vi
 - 🎯 **Game pages**
   - Game metadata (year, developer, platforms)
   - Metacritic score
-  - User reviews and posts
-  - Media section (photos & videos)
+  - Reviews and user activity
+  - Photos & videos section
 
 ---
 
 ## 🖼 Screenshots
 
 ### Home Feed
-![Home Feed](./screenshots/home.png)
+<img src="https://github.com/user-attachments/assets/0fa19047-3455-4b22-92f7-6313963c72a4" width="600" />
 
 ### Game Page
-![Game Page](./screenshots/game-page.png)
+<img src="https://github.com/user-attachments/assets/9fcc9920-2f62-4d9b-911c-f8e7a2196d2f" width="600" />
 
 ### Review with Spoilers
-![Review](./screenshots/review.png)
+<img src="https://github.com/user-attachments/assets/d51147b6-fbe4-41f4-8309-b0562e9b2416" width="500" />
 
 ### User Profile
-![Profile](./screenshots/profile.png)
+<img src="https://github.com/user-attachments/assets/0f9584ba-a58c-41d0-9655-423b05657a2c" width="500" />
 
 ---
 
@@ -70,7 +70,6 @@ Users can review games, rate them, and create game-related posts with images, vi
 
 - **Deployment**
   - Vercel (deployment only)
-  - MongoDB Atlas
 
 ---
 
@@ -80,7 +79,7 @@ This is a **learning / pet project** focused on:
 - full-stack development
 - real-world data modeling
 - social features
-- building a content-driven platform
+- content-driven UI/UX
 
 The project is actively evolving.
 
@@ -101,7 +100,7 @@ The project is actively evolving.
 
 - IMDb
 - Metacritic
-- Threads / Twitter-style feeds
+- Threads
 - Game-focused communities
 
 ---
