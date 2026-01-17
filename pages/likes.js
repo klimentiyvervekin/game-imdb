@@ -24,13 +24,13 @@ export default function LikesPage() {
   );
 
   if (status === "loading") {
-  return (
-    <StateBlock>
-      <StateTitle>Loading…</StateTitle>
-      <StateText>Please wait</StateText>
-    </StateBlock>
-  );
-}
+    return (
+      <StateBlock>
+        <StateTitle>Loading…</StateTitle>
+        <StateText>Please wait</StateText>
+      </StateBlock>
+    );
+  }
 
   if (!myUserId) {
     return (
@@ -81,10 +81,10 @@ export default function LikesPage() {
       <Section>
         <SectionTitle>Posts</SectionTitle>
         {posts.length === 0 && (
-        <EmptyBlock>
-          <EmptyLabel>No liked posts</EmptyLabel>
-        </EmptyBlock>
-      )}
+          <EmptyBlock>
+            <EmptyLabel>No liked posts</EmptyLabel>
+          </EmptyBlock>
+        )}
 
         {posts.map((p) => (
           <Card key={p._id}>
@@ -116,11 +116,11 @@ export default function LikesPage() {
       {/* COMMENTS */}
       <Section>
         <SectionTitle>Comments</SectionTitle>
-                {posts.length === 0 && (
-        <EmptyBlock>
-          <EmptyLabel>No liked comments</EmptyLabel>
-        </EmptyBlock>
-      )}
+        {posts.length === 0 && (
+          <EmptyBlock>
+            <EmptyLabel>No liked comments</EmptyLabel>
+          </EmptyBlock>
+        )}
 
         {comments.map((c) => (
           <Card key={c._id}>
@@ -160,11 +160,11 @@ export default function LikesPage() {
       {/* REPLIES */}
       <Section>
         <SectionTitle>Replies</SectionTitle>
-                        {posts.length === 0 && (
-        <EmptyBlock>
-          <EmptyLabel>No liked replies</EmptyLabel>
-        </EmptyBlock>
-      )}
+        {posts.length === 0 && (
+          <EmptyBlock>
+            <EmptyLabel>No liked replies</EmptyLabel>
+          </EmptyBlock>
+        )}
 
         {replies.map((r) => (
           <Card key={r._id}>
