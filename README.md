@@ -1,110 +1,78 @@
-# 🎮 GameIMDB
+# GameIMDB
 
-**GameIMDB** is a social web app for video game reviews and discussions — a mix of **IMDb for games** and a **Threads-like social feed**.
+GameIMDB is a social web application for video game discovery and reviews.  
+It combines detailed game pages with user ratings, reviews, and a lightweight social feed where users can share posts related to specific games.
 
-Users can review games, rate them, and create game-related posts with images, videos, memes, and comments — all centered around specific titles.
-
----
-
-## ✨ Features
-
-- 📝 **Game reviews**
-  - Rate games (1–10)
-  - Write detailed reviews
-  - Mark reviews with spoiler warnings
-  - Add review updates over time
-
-- 📰 **Game-related posts**
-  - Share thoughts, photos, videos, and memes
-  - Posts are linked directly to games
-  - Lightweight social feed inspired by Threads
-
-- 💬 **Social interactions**
-  - Comments
-  - Likes
-  - Follow users and games
-
-- 👤 **User profiles**
-  - Google authentication
-  - Avatar upload
-  - Personal feed (posts & reviews)
-  - Profile editing
-
-- 🎯 **Game pages**
-  - Game metadata (year, developer, platforms)
-  - Metacritic score
-  - Reviews and user activity
-  - Photos & videos section
+The project was built as a solo application with a focus on clean UI, realistic data modeling, and production-like frontend and backend integration.
 
 ---
 
-## 🖼 Screenshots
+## Project Overview
 
-### Home Feed (desktop)
-<img src="https://github.com/user-attachments/assets/0fa19047-3455-4b22-92f7-6313963c72a4" width="800" />
+GameIMDB allows users to explore video games, review and rate them, and interact with other users through posts and comments.  
+Each game has its own page with metadata, user activity, and related media content.
 
-### Game Page (desktop)
-<img src="https://github.com/user-attachments/assets/9fcc9920-2f62-4d9b-911c-f8e7a2196d2f" width="800" />
-
-### Review with Spoilers *(mobile view)*
-<img src="https://github.com/user-attachments/assets/d51147b6-fbe4-41f4-8309-b0562e9b2416" width="420" />
-
-### User Profile *(mobile view)*
-<img src="https://github.com/user-attachments/assets/0f9584ba-a58c-41d0-9655-423b05657a2c" width="420" />
+The application is designed to resemble a real-world content-driven platform rather than a demo or prototype.
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
-- **Frontend**
-  - React
-  - Next.js
+**Frontend**
+- React
+- Next.js
 
-- **Backend**
-  - Next.js API Routes
-  - MongoDB
-  - Mongoose
+**Backend**
+- Next.js API Routes
+- MongoDB
+- Mongoose
 
-- **Authentication**
-  - Google OAuth
+**Authentication**
+- Google OAuth
+- Session-based user authentication
 
-- **Deployment**
-  - Vercel (deployment only)
-
----
-
-## 🚧 Project Status
-
-This is a **learning / pet project** focused on:
-- full-stack development
-- real-world data modeling
-- social features
-- content-driven UI/UX
-
-The project is actively evolving.
+**Deployment**
+- Vercel (frontend and backend)
 
 ---
 
-## 🧠 Possible Improvements
+## Key Features
 
-- Notifications
-- Advanced search & filtering
-- Tags and genres
-- Rich media embeds
-- Moderation tools
-- Recommendation system
-
----
-
-## 📌 Inspiration
-
-- IMDb
-- Metacritic
-- Threads
-- Game-focused communities
+- User authentication and profiles
+- Video game pages with metadata and ratings
+- User reviews with spoiler warnings
+- Social feed with posts, comments, and likes
+- Media support (images and videos)
+- Responsive layout for desktop and mobile
 
 ---
 
-## 📄 License
+## Backend / Database
 
-This project is for educational purposes.
+The backend is implemented using Next.js API routes.  
+MongoDB is used for persistent data storage, including users, games, reviews, posts, and interactions.
+
+Data models are structured to reflect real-world relationships between users and game-related content.
+
+---
+
+## Deployment
+
+Live application:  
+https://game-imdb.vercel.app
+
+---
+
+## What I Learned
+
+- Structuring a larger React / Next.js application
+- Designing data models for content-driven platforms
+- Implementing authentication and protected routes
+- Connecting frontend components with backend APIs
+- Managing application state and user interactions
+
+---
+
+## Status
+
+The project is functional, deployed, and actively maintained.
